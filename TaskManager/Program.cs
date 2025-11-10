@@ -83,7 +83,7 @@ void ViewTasks(int? taskId = null)
 
         int result = menu.Run(keyMap);
 
-        if (result >= 0)
+        if (result >= 0 && tasks.Count > 0)
         {
             int id = tasks[result].Id;
             taskId = id;
@@ -97,16 +97,35 @@ void ViewTasks(int? taskId = null)
                     CreateNewTask(taskId.HasValue ? taskId.Value : null);
                     break;
                 case -2:
+                    if (tasks.Count == 0) break;
                     EditTask(tasks[menu.SelectedIndex].Id);
                     break;
                 case -3:
+                    if (tasks.Count == 0) break;
                     DeleteTask(tasks[menu.SelectedIndex].Id);
                     break;
                 case -4:
-                    Task parent = tasks[menu.SelectedIndex].Parent;
-                    if (parent == null) return;
-                    taskId = parent.Id;
-                    break;
+                    Task? parent = null;
+
+                    if (taskId.HasValue)
+                    {
+                        Task current = manager.GetTaskById(taskId.Value);
+                        parent = current.Parent;
+                    }
+
+                    if (taskId == null)
+                    {
+                        MainMenu();
+                    }
+                    else if (parent != null)
+                    {
+                        taskId = parent.Id;
+                    }
+                    else
+                    {
+                        taskId = null;
+                    }
+                        break;
                 case -5:
                     MainMenu();
                     break;
@@ -139,35 +158,25 @@ void CreateNewTask(int? parentId = null)
 {
     Write("Task Title: ");
     string title = ReadLine().Trim();
-
-    WriteLine();
+    if (string.IsNullOrEmpty(title)) return;
 
     manager.AddTask(title, parentId.HasValue ? manager.GetTaskById(parentId.Value) : null);
-
-    ViewTasks(parentId.HasValue ? parentId.Value : null);
 }
 
 void EditTask(int taskId)
 {
-    // TO DO
-    Console.Write(taskId);
-    ReadKey(true);
-    ViewTasks();
+    Write("New title: ");
+    string title = ReadLine().Trim();
+    if (string.IsNullOrEmpty(title)) return;
 
+    Task task = manager.GetTaskById(taskId);
+    task.Title = title;
 }
 
 void DeleteTask(int taskId)
 {
-    // TODO:
-    // bool success = DeleteTask(taskId);
-    //if (success)
-    //{
-    //    Write("Task deleted successfully.");
-    //}
-    //else
-    //{
-    //    Write("Task not found.");
-    //}
-    ReadKey(true);
-    ViewTasks();
+    Task task = manager.GetTaskById(taskId);
+    if (task == null) return;
+
+    manager.DeleteTask(task);
 }

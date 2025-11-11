@@ -18,15 +18,19 @@ string logo = @"
     | $$|  $$$$$$$ /$$$$$$$/| $$ \  $$      | $$ \/  | $$|  $$$$$$$| $$  | $$|  $$$$$$$|  $$$$$$$|  $$$$$$$| $$      
     |__/ \_______/|_______/ |__/  \__/      |__/     |__/ \_______/|__/  |__/ \_______/ \____  $$ \_______/|__/      
                                                                                         /$$  \ $$                    
-                                                                                        |  $$$$$$/                    
+                                                                                       |  $$$$$$/                    
                                                                                         \______/                     
 
-(Use the arrow or w and s keys to cycle though the options, and press enter to select an option)
+(Use the arrow or w and s keys to cycle though the options, and press enter to select an option.)
 --------------------------------------------------------------------------------------------------------------------";
 
 TaskManager manager = new();
 
-MainMenu(); // start the program
+// start the program
+while (true)
+{
+    MainMenu();
+}
 
 void MainMenu()
 {
@@ -54,34 +58,27 @@ void MainMenu()
     }
 }
 
-void ViewTasks(int? taskId = null)
+void ViewTasks(Task? selectedTask = null)
 {
     while (true)
     {
 
-        List<Task> tasks = taskId.HasValue ? manager.GetTaskById(taskId.Value).SubTasks : manager.RootTasks;
-
-        Task? parent = null;
-
-        if (taskId.HasValue)
-        {
-            Task current = manager.GetTaskById(taskId.Value);
-            parent = current.Parent;
-        }
+        List<Task> tasks = selectedTask == null ? manager.RootTasks : selectedTask.SubTasks;
 
         string title = "Tasks";
-        string prompt = @"[ ENTER ] - open selected task
+        string selectedTaskPath = GetTaskPath(selectedTask);
+        string prompt = $@"[ ENTER ] - open selected task
 [ 1 ] - new task
 [ 2 ] - edit selected task
 [ 3 ] - delete selected task
 [ 4 ] - go back
 [ 5 ] - main menu
+-----------------------------
+{selectedTaskPath}
 -----------------------------";
-        string selectedTaskInfo = taskId.HasValue ? TaskPath(taskId.Value) : "none";
 
-        TaskMenu menu = new(tasks, $"{prompt}\nSelected task: {selectedTaskInfo}\n", title);
 
-        Dictionary<ConsoleKey, int> keyMap = new Dictionary<ConsoleKey, int> // options mapped to keys
+        Dictionary<ConsoleKey, int> options = new Dictionary<ConsoleKey, int> // negative values to distinguish them from list index
         {
             { ConsoleKey.D1, -1 },
             { ConsoleKey.D2, -2 },
@@ -90,63 +87,62 @@ void ViewTasks(int? taskId = null)
             { ConsoleKey.D5, -5 },
         };
 
-        int result = menu.Run(keyMap);
+        Menu menu = new(tasks.Select(t => t.Title).ToArray(), prompt, title);
 
-        if (result >= 0 && tasks.Count > 0)
+        int selection = menu.Run(options);
+
+        if (selection >= 0 && tasks.Count > 0)
         {
-            int id = tasks[result].Id;
-            taskId = id;
+            selectedTask = tasks[selection];
             continue;
         }
         else
         {
-            switch (result)
+            switch (selection)
             {
                 case -1:
-                    CreateNewTask(taskId.HasValue ? taskId.Value : null);
+                    CreateNewTask(selectedTask); // create sub task
                     break;
                 case -2:
                     if (tasks.Count == 0) break;
-                    EditTask(tasks[menu.SelectedIndex].Id);
+                    EditTask(tasks[menu.SelectedIndex]); // index from menu
                     break;
                 case -3:
                     if (tasks.Count == 0) break;
-                    DeleteTask(tasks[menu.SelectedIndex].Id);
+                    DeleteTask(tasks[menu.SelectedIndex]);
                     break;
                 case -4:
-                    if(!taskId.HasValue) // no task selected at rool level, go back to main menu
+                    if(selectedTask == null) // no task selected at rool level, return to main menu
                     {
-                        MainMenu();
+                        return;
                     }
-                    if (parent != null) // go back to parent task
+                    if (selectedTask.Parent == null) // go to root level tasks
                     {
-                        taskId = parent.Id;
+                        selectedTask = null;
                     }
-                    else // go to root level tasks
+                    else  // go back to parent task
                     {
-                        taskId = null;
+                        selectedTask = selectedTask.Parent;
                     }
-                        break;
-                case -5:
-                    MainMenu();
                     break;
+                case -5:
+                    return;
             }
         }
     }
 
 }
 
-void Account()
+void Account() // TODO (probably rename this method)
 {
 
 }
 
-void DisplayHelpInfo()
+void DisplayHelpInfo() // TODO
 {
     Clear();
     WriteLine("Help Info:");
     ReadKey(true);
-    MainMenu();
 }
 
 void Exit()
@@ -155,36 +151,35 @@ void Exit()
 }
 
 
-void CreateNewTask(int? parentId = null)
+void CreateNewTask(Task? parent = null)
 {
     Write("Task Title: ");
     string title = ReadLine().Trim();
     if (string.IsNullOrEmpty(title)) return;
 
-    manager.AddTask(title, parentId.HasValue ? manager.GetTaskById(parentId.Value) : null);
+    manager.AddTask(title, parent);
 }
 
-void EditTask(int taskId)
+void EditTask(Task task)
 {
     Write("New title: ");
     string title = ReadLine().Trim();
     if (string.IsNullOrEmpty(title)) return;
 
-    Task task = manager.GetTaskById(taskId);
     task.Title = title;
 }
 
-void DeleteTask(int taskId)
+void DeleteTask(Task task)
 {
-    Task task = manager.GetTaskById(taskId);
-    if (task == null) return;
-
     manager.DeleteTask(task);
 }
 
-string TaskPath(int taskId)
+string GetTaskPath(Task? task)
 {
-    Task task = manager.GetTaskById(taskId);
+    if (task == null)
+    {
+        return "(no task selected.)";
+    }
 
     List<Task> parents = new();
 

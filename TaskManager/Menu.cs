@@ -84,7 +84,7 @@ public class Menu
             else if (keyMap != null && keyMap.TryGetValue(keyPressed, out int mappedValue))
             {
                 CursorVisible = true;
-                return mappedValue;
+                return mappedValue; // options for switch statement
             }
         }
 

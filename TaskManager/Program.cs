@@ -77,7 +77,7 @@ void ViewTasks(int? taskId = null)
 [ 4 ] - go back
 [ 5 ] - main menu
 -----------------------------";
-        string selectedTaskInfo = taskId.HasValue ? TaskInfo(taskId.Value) : "none";
+        string selectedTaskInfo = taskId.HasValue ? TaskPath(taskId.Value) : "none";
 
         TaskMenu menu = new(tasks, $"{prompt}\nSelected task: {selectedTaskInfo}\n", title);
 
@@ -182,7 +182,7 @@ void DeleteTask(int taskId)
     manager.DeleteTask(task);
 }
 
-string TaskInfo(int taskId)
+string TaskPath(int taskId)
 {
     Task task = manager.GetTaskById(taskId);
 

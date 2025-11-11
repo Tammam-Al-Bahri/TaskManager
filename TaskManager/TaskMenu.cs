@@ -11,7 +11,7 @@
 
     public int RunAndGetTaskId()
     {
-        int selectedIndex = base.Run();
-        return _tasks[selectedIndex].Id;
+        int selectedIndex = base.Run(); // result of method from menu class
+        return _tasks[selectedIndex].Id; // return task id of the selected task
     }
 }

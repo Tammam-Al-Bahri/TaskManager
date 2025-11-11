@@ -61,6 +61,14 @@ void ViewTasks(int? taskId = null)
 
         List<Task> tasks = taskId.HasValue ? manager.GetTaskById(taskId.Value).SubTasks : manager.RootTasks;
 
+        Task? parent = null;
+
+        if (taskId.HasValue)
+        {
+            Task current = manager.GetTaskById(taskId.Value);
+            parent = current.Parent;
+        }
+
         string title = "Tasks";
         string prompt = @"[ ENTER ] - open selected task
 [ 1 ] - new task
@@ -69,8 +77,9 @@ void ViewTasks(int? taskId = null)
 [ 4 ] - go back
 [ 5 ] - main menu
 -----------------------------";
+        string selectedTaskInfo = taskId.HasValue ? TaskInfo(taskId.Value) : "none";
 
-        TaskMenu menu = new(tasks, prompt, title);
+        TaskMenu menu = new(tasks, $"{prompt}\nSelected task: {selectedTaskInfo}\n", title);
 
         Dictionary<ConsoleKey, int> keyMap = new Dictionary<ConsoleKey, int> // options mapped to keys
         {
@@ -105,14 +114,7 @@ void ViewTasks(int? taskId = null)
                     DeleteTask(tasks[menu.SelectedIndex].Id);
                     break;
                 case -4:
-                    Task? parent = null;
-
-                    if (taskId.HasValue)
-                    {
-                        Task current = manager.GetTaskById(taskId.Value);
-                        parent = current.Parent;
-                    }
-                    else // no parent at rool level, go back to main menu
+                    if(!taskId.HasValue) // no task selected at rool level, go back to main menu
                     {
                         MainMenu();
                     }
@@ -178,4 +180,10 @@ void DeleteTask(int taskId)
     if (task == null) return;
 
     manager.DeleteTask(task);
+}
+
+string TaskInfo(int taskId)
+{
+    Task task = manager.GetTaskById(taskId);
+    return $"{task.Title}";
 }

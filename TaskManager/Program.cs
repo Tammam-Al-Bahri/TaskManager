@@ -26,7 +26,7 @@ string logo = @"
 
 TaskManager manager = new();
 
-MainMenu();
+MainMenu(); // start the program
 
 void MainMenu()
 {
@@ -72,7 +72,7 @@ void ViewTasks(int? taskId = null)
 
         TaskMenu menu = new(tasks, prompt, title);
 
-        Dictionary<ConsoleKey, int> keyMap = new Dictionary<ConsoleKey, int>
+        Dictionary<ConsoleKey, int> keyMap = new Dictionary<ConsoleKey, int> // options mapped to keys
         {
             { ConsoleKey.D1, -1 },
             { ConsoleKey.D2, -2 },
@@ -112,16 +112,15 @@ void ViewTasks(int? taskId = null)
                         Task current = manager.GetTaskById(taskId.Value);
                         parent = current.Parent;
                     }
-
-                    if (taskId == null)
+                    else // no parent at rool level, go back to main menu
                     {
                         MainMenu();
                     }
-                    else if (parent != null)
+                    if (parent != null) // go back to parent task
                     {
                         taskId = parent.Id;
                     }
-                    else
+                    else // go to root level tasks
                     {
                         taskId = null;
                     }

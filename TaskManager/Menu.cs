@@ -2,50 +2,64 @@
 
 public class Menu
 {
-    protected int _selectedIndex;
+    private int _selectedIndex;
 
-    protected string _prompt;
-    protected string[] _options;
+    private string _prompt;
+    private string[] _options;
     public int SelectedIndex { get { return _selectedIndex; } }
 
-    public Menu(string[] options, string prompt, string title)
+    public Menu(string[] options, string prompt, int? selectedIndex = null)
     {
-        _selectedIndex = 0;
+        if (selectedIndex.HasValue)
+        {
+            // clamp
+            _selectedIndex = Math.Clamp(selectedIndex.Value, 0, options.Length > 0 ? options.Length - 1 : 0);
+        }
+        else
+        {
+            _selectedIndex = 0;
+        }
+
 
         _prompt = prompt;
         _options = options;
-
-        Title = title;
     }
 
 
-    protected virtual void Display()
+    private void Display()
     {
         WriteLine(_prompt);
-        for (int i = 0; i < _options.Length; i++)
+        if (_options.Length == 0)
         {
-            string currentOption = _options[i];
-            string prefix;
-
-            if (i == _selectedIndex)
-            {
-                prefix = ">";
-                ForegroundColor = ConsoleColor.Black;
-                BackgroundColor = ConsoleColor.White;
-            }
-            else
-            {
-                prefix = " ";
-                ForegroundColor = ConsoleColor.White;
-                BackgroundColor = ConsoleColor.Black;
-            }
-
-            WriteLine($"{prefix} [ {currentOption} ]");
+            WriteLine("(list is empty.)");
         }
-        ResetColor();
+        else
+        {
+            for (int i = 0; i < _options.Length; i++)
+            {
+                string currentOption = _options[i];
+                string prefix;
+
+                if (i == _selectedIndex)
+                {
+                    prefix = ">";
+                    ForegroundColor = ConsoleColor.Black;
+                    BackgroundColor = ConsoleColor.White;
+                }
+                else
+                {
+                    prefix = " ";
+                    ForegroundColor = ConsoleColor.White;
+                    BackgroundColor = ConsoleColor.Black;
+                }
+
+                WriteLine($"{prefix} [ {currentOption} ]");
+            }
+            ResetColor();
+        }
     }
 
-    public virtual int Run(Dictionary<ConsoleKey, int>? keyMap = null)
+    public int Run(Dictionary<ConsoleKey, int>? keyMap = null)
     {
         CursorVisible = false;
 
@@ -89,7 +103,6 @@ public class Menu
         }
 
         CursorVisible = true;
-
         return _selectedIndex;
     }
 }

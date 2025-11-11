@@ -24,6 +24,8 @@ string logo = @"
 (Use the arrow or w and s keys to cycle though the options, and press enter to select an option.)
 --------------------------------------------------------------------------------------------------------------------";
 
+string seperator = "-----------------------------";
+
 TaskManager manager = new();
 
 // start the program
@@ -34,11 +36,11 @@ while (true)
 
 void MainMenu()
 {
-    string title = "Task Manager";
+    Title = "Task Manager";
     string prompt = logo;
     string[] options = ["Tasks", "Account", "Help", "Exit"];
 
-    Menu menu = new Menu(options, prompt, title);
+    Menu menu = new Menu(options, prompt);
     int selectedIndex = menu.Run();
 
     switch (selectedIndex)
@@ -60,12 +62,13 @@ void MainMenu()
 
 void ViewTasks(Task? selectedTask = null)
 {
+    Title = "Tasks";
+    int parentIndex = 0;
     while (true)
     {
 
         List<Task> tasks = selectedTask == null ? manager.RootTasks : selectedTask.SubTasks;
 
-        string title = "Tasks";
         string selectedTaskPath = GetTaskPath(selectedTask);
         string prompt = $@"[ ENTER ] - open selected task
 [ 1 ] - new task
@@ -73,9 +76,9 @@ void ViewTasks(Task? selectedTask = null)
 [ 3 ] - delete selected task
 [ 4 ] - go back
 [ 5 ] - main menu
------------------------------
-{selectedTaskPath}
------------------------------";
+{seperator}
+Selected: {selectedTaskPath}
+{seperator}";
 
 
         Dictionary<ConsoleKey, int> options = new Dictionary<ConsoleKey, int> // negative values to distinguish them from list index
@@ -87,12 +90,13 @@ void ViewTasks(Task? selectedTask = null)
             { ConsoleKey.D5, -5 },
         };
 
-        Menu menu = new(tasks.Select(t => t.Title).ToArray(), prompt, title);
-
+        Menu menu = new(tasks.Select(t => t.Title).ToArray(), prompt, parentIndex);
         int selection = menu.Run(options);
+
 
         if (selection >= 0 && tasks.Count > 0)
         {
+            parentIndex = 0;
             selectedTask = tasks[selection];
             continue;
         }
@@ -102,9 +106,11 @@ void ViewTasks(Task? selectedTask = null)
             {
                 case -1:
                     CreateNewTask(selectedTask); // create sub task
+                    parentIndex = tasks.Count - 1;
                     break;
                 case -2:
                     if (tasks.Count == 0) break;
+                    parentIndex = menu.SelectedIndex;
                     EditTask(tasks[menu.SelectedIndex]); // index from menu
                     break;
                 case -3:
@@ -118,10 +124,12 @@ void ViewTasks(Task? selectedTask = null)
                     }
                     if (selectedTask.Parent == null) // go to root level tasks
                     {
+                        parentIndex = manager.RootTasks.FindIndex(t => t == selectedTask);
                         selectedTask = null;
                     }
-                    else  // go back to parent task
+                    else // go back to parent task
                     {
+                        parentIndex = selectedTask.Parent.SubTasks.FindIndex(t => t == selectedTask);
                         selectedTask = selectedTask.Parent;
                     }
                     break;
@@ -153,6 +161,7 @@ void Exit()
 
 void CreateNewTask(Task? parent = null)
 {
+    WriteLine(seperator);
     Write("Task Title: ");
     string title = ReadLine().Trim();
     if (string.IsNullOrEmpty(title)) return;
@@ -162,6 +171,7 @@ void CreateNewTask(Task? parent = null)
 
 void EditTask(Task task)
 {
+    WriteLine(seperator);
     Write("New title: ");
     string title = ReadLine().Trim();
     if (string.IsNullOrEmpty(title)) return;

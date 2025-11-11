@@ -2,13 +2,13 @@
 {
     private List<Task> _rootTasks = new();
     private Dictionary<int, Task> _taskLookup = new();
-    private int _nextId = 1;
+    private int _nextId = 1; // auto increment
 
     public List<Task> RootTasks { get { return _rootTasks; } }
 
     public Task AddTask(string title, Task? parent = null)
     {
-        Task task = new Task(_nextId++, title, parent);
+        Task task = new Task(_nextId++, title, parent); // auto increment
         if (parent == null)
         {
             _rootTasks.Add(task);
@@ -35,13 +35,13 @@
         if (task.Parent == null)
             _rootTasks.Remove(task);
         else
-            task.Parent.SubTasks.Remove(task);
+            task.Parent.SubTasks.Remove(task); 
     }
 
     private void RemoveFromLookup(Task task)
     {
         _taskLookup.Remove(task.Id);
-        foreach (var sub in task.SubTasks)
+        foreach (Task sub in task.SubTasks)
             RemoveFromLookup(sub);
     }
 }

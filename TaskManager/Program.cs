@@ -185,5 +185,21 @@ void DeleteTask(int taskId)
 string TaskInfo(int taskId)
 {
     Task task = manager.GetTaskById(taskId);
-    return $"{task.Title}";
+
+    List<Task> parents = new();
+
+    Task? current = task.Parent;
+    while (current != null)
+    {
+        parents.Insert(0, current); // insert at start to maintain order
+        current = current.Parent;
+    }
+
+    string taskPath = "";
+    foreach(Task p in parents)
+    {
+        taskPath += $"{p.Title} > ";
+    }
+
+    return $"{taskPath}[ {task.Title} ]";
 }

@@ -8,7 +8,7 @@
 
     public Task AddTask(string title, string description, Task? parent = null, DateTime? dueDate = null, DateTime? createdAt = null)
     {
-        Task task = new Task(_nextId++, title, description, parent, dueDate, createdAt); // auto increment
+        Task task = new Task(_nextId++, title, description, parent, dueDate); // auto increment
         if (parent == null)
         {
             _rootTasks.Add(task);

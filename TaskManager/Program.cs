@@ -72,21 +72,24 @@ void ViewTasks(Task? selectedTask = null)
         List<Task> tasks = selectedTask == null ? manager.RootTasks : selectedTask.SubTasks;
 
         string selectedTaskPath = GetTaskPath(selectedTask);
-        string prompt = $@"-----------
+        string prompt = $@"
+-----------
 | Options |
 {separator}
 [ ENTER ] - open task
 [ 1 ]     - new task
 [ 2 ]     - edit task
 [ 3 ]     - delete task
-[ 4 ]     - go back
-[ 5 ]     - main menu
+[ 4 ]     - mark as completed
+[ 5 ]     - go back
+[ 6 ]     - main menu
 {separator}
 {(selectedTask != null ? 
 $"-------------\n| Task Info |\n{separator}\nSelected: {selectedTaskPath}\n---------" +
-$"\n{selectedTask.Description}\n{separator}" +
+$"\nDescription: {selectedTask.Description}\n{separator}" +
 $"\nDue at: {(selectedTask.DueDate != null ? selectedTask.DueDate?.ToString(dateFormat) +$" | {(selectedTask.DueDate.Value - selectedTask.CreatedAt).Days} days" : "-")}" +
 $"\nCreated at: {selectedTask.CreatedAt.ToString(dateFormat)}" +
+$"\nCompleted: {(selectedTask.IsCompleted ? "Yes" : "No")}" +
 $"\n{separator}" +
 "\n-------------\n| Sub Tasks |" : "---------\n| Tasks |")}
 {separator}"; // display menu and selected task info
@@ -99,9 +102,10 @@ $"\n{separator}" +
             { ConsoleKey.D3, -3 },
             { ConsoleKey.D4, -4 },
             { ConsoleKey.D5, -5 },
+            { ConsoleKey.D6, -6 },
         };
 
-        (string title, string info)[] tasksInfo = tasks.Select(t => (t.Title, $"| Due: {(t.DueDate.HasValue ? $"{(t.DueDate.Value - DateTime.Now).Days} days" : "-")} |")).ToArray();
+        (string title, string info)[] tasksInfo = tasks.Select(t => (t.Title, $"| Completed: {(t.IsCompleted ? "Yes" : "No")} | Due: {(t.DueDate.HasValue ? $"{(t.DueDate.Value - DateTime.Now).Days} days" : "-")} |")).ToArray();
         Menu menu = new(tasksInfo, prompt, index);
         int selection = menu.Run(options);
 
@@ -127,9 +131,15 @@ $"\n{separator}" +
                     break;
                 case -3:
                     if (tasks.Count == 0) break;
+                    index = menu.SelectedIndex;
                     DeleteTask(tasks[menu.SelectedIndex]);
                     break;
                 case -4:
+                    if (tasks.Count == 0) break;
+                    index = menu.SelectedIndex;
+                    ToggleTaskIsCompleted(tasks[menu.SelectedIndex]);
+                    break;
+                case -5:
                     if(selectedTask == null) // no task selected at rool level, return to main menu
                     {
                         return;
@@ -145,7 +155,7 @@ $"\n{separator}" +
                         selectedTask = selectedTask.Parent;
                     }
                     break;
-                case -5:
+                case -6:
                     return;
             }
         }
@@ -217,6 +227,11 @@ void DeleteTask(Task task)
     manager.DeleteTask(task);
 }
 
+void ToggleTaskIsCompleted(Task task)
+{
+    task.IsCompleted = !task.IsCompleted;
+}
+
 string GetTaskPath(Task? task)
 {
     if (task == null)
@@ -266,7 +281,7 @@ DateTime? DateInput(string? edit = null)
         else
         {
             Write("Invalid date format. No due date set.");
-            ReadKey(true);
+            ReadKey(true);  
         }
     }
     return dueDate;

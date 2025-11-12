@@ -6,10 +6,10 @@ public class Menu
     private int _selectedIndex;
 
     private string _prompt;
-    private string[] _options;
+    private (string title, string info)[] _options;
     public int SelectedIndex { get { return _selectedIndex; } }
 
-    public Menu(string[] options, string prompt, int? selectedIndex = null)
+    public Menu((string title, string info)[] options, string prompt, int? selectedIndex = null)
     {
         if (selectedIndex.HasValue)
         {
@@ -39,25 +39,29 @@ public class Menu
         {
             for (int i = 0; i < _options.Length; i++)
             {
-                string currentOption = _options[i];
+                string currentOption = _options[i].title;
                 string prefix;
+                string info;
 
                 if (i == _selectedIndex)
                 {
                     prefix = ">";
+                    info = _options[i].info;
                     ForegroundColor = ConsoleColor.Black;
                     BackgroundColor = ConsoleColor.White;
                 }
                 else
                 {
                     prefix = " ";
+                    info = "";
                     ForegroundColor = ConsoleColor.White;
                     BackgroundColor = ConsoleColor.Black;
                 }
 
-                WriteLine($"{prefix} [ {currentOption} ]");
+                Write($"{prefix} [ {currentOption} ]");
+                ResetColor();
+                WriteLine((string.IsNullOrEmpty(info) ? "" : $" - {info}"));
             }
-            ResetColor();
         }
     }
 

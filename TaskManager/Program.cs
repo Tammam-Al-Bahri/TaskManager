@@ -38,7 +38,7 @@ void MainMenu()
 {
     Title = "Task Manager";
     string prompt = logo;
-    string[] options = ["Tasks", "Account", "Help", "Exit"];
+    (string, string)[] options = [("Tasks", "view and manage tasks"), ("Account", "change password"), ("Help", ""), ("Exit", "")];
 
     Menu menu = new Menu(options, prompt);
     int selectedIndex = menu.Run();
@@ -80,9 +80,9 @@ void ViewTasks(Task? selectedTask = null)
 {seperator}
 
 {seperator}
-Opened: {selectedTaskPath}
+Selected Task: {selectedTaskPath}
 {seperator}
-{(selectedTask != null ? $"Created at: {selectedTask.CreatedAt}\nDue: {(selectedTask.DueDate != null ? selectedTask.DueDate.ToString() : "-")}" : "")}
+{(selectedTask != null ? $"Created at: {selectedTask.CreatedAt.ToString("yyyy-MM-dd")}\nDue: {(selectedTask.DueDate != null ? selectedTask.DueDate?.ToString("yyyy-MM-dd") : "-")}" : "")}
 {seperator}
 
 {(selectedTask == null ? "---------\n| Tasks |\n---------" : "-------------\n| Sub Tasks |\n-------------")}
@@ -98,7 +98,8 @@ Opened: {selectedTaskPath}
             { ConsoleKey.D5, -5 },
         };
 
-        Menu menu = new(tasks.Select(t => t.Title).ToArray(), prompt, index);
+        (string title, string info)[] tasksInfo = tasks.Select(t => (t.Title, $"| Due: {(t.DueDate.HasValue ? t.DueDate?.ToString("yyyy-MM-dd") : "-")} |")).ToArray();
+        Menu menu = new(tasksInfo, prompt, index);
         int selection = menu.Run(options);
 
 
@@ -179,7 +180,7 @@ void CreateNewTask(Task? parent = null)
     if (string.IsNullOrEmpty(title)) return;
 
     DateTime? dueDate = null;
-    Write("Due Date (yyyy-mm-dd) (optional): ");
+    Write("Due Date (yyyy-mm-dd): ");
     string dueDateInput = ReadLine().Trim();
 
     WriteLine();
@@ -227,7 +228,7 @@ string GetTaskPath(Task? task)
 {
     if (task == null)
     {
-        return "";
+        return "-";
     }
 
     List<Task> parents = new();

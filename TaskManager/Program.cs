@@ -25,7 +25,7 @@ string logo = @"
 (Use the arrow or w and s keys to cycle though the options, and press enter to select an option.)
 --------------------------------------------------------------------------------------------------------------------";
 
-string seperator = "----------------------------------------------------------";
+string separator = "----------------------------------------------------------";
 string dateFormat = "yyyy-MM-dd";
 
 TaskManager manager = new();
@@ -74,22 +74,22 @@ void ViewTasks(Task? selectedTask = null)
         string selectedTaskPath = GetTaskPath(selectedTask);
         string prompt = $@"-----------
 | Options |
-{seperator}
+{separator}
 [ ENTER ] - open task
 [ 1 ]     - new task
 [ 2 ]     - edit task
 [ 3 ]     - delete task
 [ 4 ]     - go back
 [ 5 ]     - main menu
-{seperator}
+{separator}
 {(selectedTask != null ? 
-$"-------------\n| Task Info |\n{seperator}\nSelected: {selectedTaskPath}\n---------" +
-$"\n{selectedTask.Description}\n{seperator}" +
+$"-------------\n| Task Info |\n{separator}\nSelected: {selectedTaskPath}\n---------" +
+$"\n{selectedTask.Description}\n{separator}" +
 $"\nDue at: {(selectedTask.DueDate != null ? selectedTask.DueDate?.ToString(dateFormat) +$" | {(selectedTask.DueDate.Value - selectedTask.CreatedAt).Days} days" : "-")}" +
 $"\nCreated at: {selectedTask.CreatedAt.ToString(dateFormat)}" +
-$"\n{seperator}" +
+$"\n{separator}" +
 "\n-------------\n| Sub Tasks |" : "---------\n| Tasks |")}
-{seperator}"; // display menu and selected task info
+{separator}"; // display menu and selected task info
 
 
         Dictionary<ConsoleKey, int> options = new Dictionary<ConsoleKey, int> // negative values to distinguish them from list index
@@ -195,7 +195,7 @@ void CreateNewTask(Task? parent = null)
 void EditTask(Task task)
 {
     Clear();
-    WriteLine(seperator);
+    WriteLine(separator);
     WriteLine("New title: ");
     string title = ReadLineWithEdit(task.Title).Trim();
     if (string.IsNullOrEmpty(title)) return;

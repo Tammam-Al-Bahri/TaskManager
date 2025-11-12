@@ -1,4 +1,5 @@
-﻿using static System.Console;
+﻿using System.Text;
+using static System.Console;
 
 //foreach (string arg in args)
 //{
@@ -25,6 +26,7 @@ string logo = @"
 --------------------------------------------------------------------------------------------------------------------";
 
 string seperator = "----------------------------------------------------------";
+string dateFormat = "yyyy-MM-dd";
 
 TaskManager manager = new();
 
@@ -62,15 +64,17 @@ void MainMenu()
 
 void ViewTasks(Task? selectedTask = null)
 {
-    Title = $"{selectedTask?.Title ?? "Tasks"}"; // default title if no selected task
     int index = 0; // for selecting task when going back
     while (true)
     {
+        Title = $"{selectedTask?.Title ?? "Tasks"}"; // default title if no selected task
 
         List<Task> tasks = selectedTask == null ? manager.RootTasks : selectedTask.SubTasks;
 
         string selectedTaskPath = GetTaskPath(selectedTask);
-        string prompt = $@"{seperator}
+        string prompt = $@"-----------
+| Options |
+{seperator}
 [ ENTER ] - open task
 [ 1 ]     - new task
 [ 2 ]     - edit task
@@ -78,15 +82,14 @@ void ViewTasks(Task? selectedTask = null)
 [ 4 ]     - go back
 [ 5 ]     - main menu
 {seperator}
-
-{seperator}
-Selected Task: {selectedTaskPath}
-{seperator}
-{(selectedTask != null ? $"Created at: {selectedTask.CreatedAt.ToString("yyyy-MM-dd")}\nDue: {(selectedTask.DueDate != null ? selectedTask.DueDate?.ToString("yyyy-MM-dd") : "-")}" : "")}
-{seperator}
-
-{(selectedTask == null ? "---------\n| Tasks |\n---------" : "-------------\n| Sub Tasks |\n-------------")}
-"; // display menu and selected task info
+{(selectedTask != null ? 
+$"-------------\n| Task Info |\n{seperator}\nSelected: {selectedTaskPath}\n---------" +
+$"\n{selectedTask.Description}\n{seperator}" +
+$"\nDue at: {(selectedTask.DueDate != null ? selectedTask.DueDate?.ToString(dateFormat) +$" | {(selectedTask.DueDate.Value - selectedTask.CreatedAt).Days} days" : "-")}" +
+$"\nCreated at: {selectedTask.CreatedAt.ToString(dateFormat)}" +
+$"\n{seperator}" +
+"\n-------------\n| Sub Tasks |" : "---------\n| Tasks |")}
+{seperator}"; // display menu and selected task info
 
 
         Dictionary<ConsoleKey, int> options = new Dictionary<ConsoleKey, int> // negative values to distinguish them from list index
@@ -98,7 +101,7 @@ Selected Task: {selectedTaskPath}
             { ConsoleKey.D5, -5 },
         };
 
-        (string title, string info)[] tasksInfo = tasks.Select(t => (t.Title, $"| Due: {(t.DueDate.HasValue ? t.DueDate?.ToString("yyyy-MM-dd") : "-")} |")).ToArray();
+        (string title, string info)[] tasksInfo = tasks.Select(t => (t.Title, $"| Due: {(t.DueDate.HasValue ? $"{(t.DueDate.Value - DateTime.Now).Days} days" : "-")} |")).ToArray();
         Menu menu = new(tasksInfo, prompt, index);
         int selection = menu.Run(options);
 
@@ -175,48 +178,38 @@ void CreateNewTask(Task? parent = null)
     WriteLine("| New Task |");
     WriteLine("------------");
 
-    Write("Task Title: ");
+    WriteLine("Task Title: ");
     string title = ReadLine().Trim();
     if (string.IsNullOrEmpty(title)) return;
+    WriteLine("");
 
-    DateTime? dueDate = null;
-    Write("Due Date (yyyy-mm-dd): ");
-    string dueDateInput = ReadLine().Trim();
+    WriteLine("Task Description: ");
+    string description = ReadLine().Trim();
+    WriteLine("");
 
-    WriteLine();
+    DateTime? dueDate = DateInput();
 
-    if (string.IsNullOrEmpty(dueDateInput))
-    {
-        WriteLine("No due date set.");
-        ReadKey(true);
-    }
-    else
-    {
-        if (DateTime.TryParse(dueDateInput, out DateTime parsedDate))
-        {
-            dueDate = parsedDate;
-        }
-        else
-        {
-            Write("Invalid date format. No due date set.");
-            ReadKey(true);
-        }
-    }
-
-    if (string.IsNullOrEmpty(title)) return;
-
-    manager.AddTask(title, parent, dueDate);
+    manager.AddTask(title, description, parent, dueDate);
 }
 
 void EditTask(Task task)
 {
+    Clear();
     WriteLine(seperator);
     WriteLine("New title: ");
-    string title = Menu.ReadLineWithEdit(task.Title).Trim();
-
+    string title = ReadLineWithEdit(task.Title).Trim();
     if (string.IsNullOrEmpty(title)) return;
+    WriteLine("\n"); // instead of two write lines
+
+    WriteLine("New description: ");
+    string description = ReadLineWithEdit(task.Description).Trim();
+    WriteLine("\n");
+
+    DateTime? dueDate = DateInput(task.DueDate?.ToString("yyyy-MM-dd"));
 
     task.Title = title;
+    task.Description = description;
+    task.DueDate = dueDate;
 }
 
 void DeleteTask(Task task)
@@ -247,4 +240,104 @@ string GetTaskPath(Task? task)
     }
 
     return $"{taskPath}[ {task.Title} ]";
+}
+
+DateTime? DateInput(string? edit = null)
+{
+    DateTime? dueDate = null;
+    if (edit == null) edit = "";
+
+    WriteLine($"Due Date ({dateFormat}): ");
+    string dueDateInput = ReadLineWithEdit(edit);
+
+    WriteLine();
+
+    if (string.IsNullOrEmpty(dueDateInput))
+    {
+        WriteLine("No due date set.");
+        ReadKey(true);
+    }
+    else
+    {
+        if (DateTime.TryParse(dueDateInput, out DateTime parsedDate))
+        {
+            dueDate = parsedDate;
+        }
+        else
+        {
+            Write("Invalid date format. No due date set.");
+            ReadKey(true);
+        }
+    }
+    return dueDate;
+}
+
+string ReadLineWithEdit(string initial)
+{
+    StringBuilder buffer = new StringBuilder(initial);
+    int cursorPos = initial.Length;
+
+    Write(initial);
+
+    ConsoleKey keyPressed = new();
+    ConsoleKeyInfo key;
+    while (keyPressed != ConsoleKey.Enter)
+    {
+        ConsoleKeyInfo keyInfo = ReadKey(true);
+        keyPressed = keyInfo.Key;
+
+        switch (keyPressed)
+        {
+            case ConsoleKey.LeftArrow:
+                if (cursorPos > 0)
+                {
+                    cursorPos--;
+                    CursorLeft--;
+                }
+                break;
+            case ConsoleKey.RightArrow:
+                if (cursorPos < buffer.Length)
+                {
+                    cursorPos++;
+                    CursorLeft++;
+                }
+                break;
+            case ConsoleKey.Backspace:
+                if (cursorPos > 0)
+                {
+                    buffer.Remove(cursorPos - 1, 1);
+                    cursorPos--;
+                    RewriteBuffer(buffer, cursorPos);
+                }
+                break;
+            case ConsoleKey.Delete:
+                if (cursorPos < buffer.Length)
+                {
+                    buffer.Remove(cursorPos, 1);
+                    RewriteBuffer(buffer, cursorPos);
+                }
+                break;
+            default:
+                if (!char.IsControl(keyInfo.KeyChar))
+                {
+                    buffer.Insert(cursorPos, keyInfo.KeyChar);
+                    cursorPos++;
+                    RewriteBuffer(buffer, cursorPos);
+                }
+                break;
+        }
+    }
+
+    return buffer.ToString();
+}
+
+void RewriteBuffer(StringBuilder buffer, int cursorPos)
+{
+    int left = CursorLeft;
+    int top = CursorTop;
+    CursorLeft = 0;
+    Write(new string(' ', BufferWidth));
+    CursorLeft = 0;
+    Write(buffer.ToString());
+    CursorLeft = cursorPos;
 }

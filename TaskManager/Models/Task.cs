@@ -4,6 +4,7 @@
 
     public string Title;
 
+
     public DateTime? DueDate;
     public DateTime CreatedAt { get; }
 
@@ -13,14 +14,14 @@
 
     public List<Task> SubTasks = new();
 
-    public Task(int id, string title, Task? parent = null, DateTime? dueDate = null)
+    public Task(int id, string title, Task? parent = null, DateTime? dueDate = null, DateTime? createdAt = null)
     {
         Id = id;
 
         Title = title;
 
         DueDate = dueDate;
-        CreatedAt = DateTime.Now;
+        CreatedAt = createdAt.HasValue ? createdAt.Value : DateTime.Now;
 
         IsCompleted = false;
 

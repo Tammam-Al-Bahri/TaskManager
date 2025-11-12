@@ -32,7 +32,8 @@ public class Menu
         WriteLine(_prompt);
         if (_options.Length == 0)
         {
-            WriteLine("(list is empty.)");
+            WriteLine("-empty-");
+            return;
         }
         else
         {

@@ -6,9 +6,9 @@
 
     public List<Task> RootTasks { get { return _rootTasks; } }
 
-    public Task AddTask(string title, Task? parent = null)
+    public Task AddTask(string title, Task? parent = null, DateTime? dueDate = null, DateTime? createdAt = null)
     {
-        Task task = new Task(_nextId++, title, parent); // auto increment
+        Task task = new Task(_nextId++, title, parent, dueDate, createdAt); // auto increment
         if (parent == null)
         {
             _rootTasks.Add(task);

@@ -62,7 +62,7 @@ void MainMenu()
 
 void ViewTasks(Task? selectedTask = null)
 {
-    Title = "Tasks";
+    Title = $"{selectedTask?.Title ?? "Tasks"}"; // default title if no selected task
     int index = 0; // for selecting task when going back
     while (true)
     {
@@ -70,15 +70,23 @@ void ViewTasks(Task? selectedTask = null)
         List<Task> tasks = selectedTask == null ? manager.RootTasks : selectedTask.SubTasks;
 
         string selectedTaskPath = GetTaskPath(selectedTask);
-        string prompt = $@"[ ENTER ] - open selected task
-[ 1 ] - new task
-[ 2 ] - edit task
-[ 3 ] - delete task
-[ 4 ] - go back
-[ 5 ] - main menu
+        string prompt = $@"{seperator}
+[ ENTER ] - open task
+[ 1 ]     - new task
+[ 2 ]     - edit task
+[ 3 ]     - delete task
+[ 4 ]     - go back
+[ 5 ]     - main menu
 {seperator}
-Selected: {selectedTaskPath}
-{seperator}";
+
+{seperator}
+Opened: {selectedTaskPath}
+{seperator}
+{(selectedTask != null ? $"Created at: {selectedTask.CreatedAt}\nDue: {(selectedTask.DueDate != null ? selectedTask.DueDate.ToString() : "-")}" : "")}
+{seperator}
+
+{(selectedTask == null ? "---------\n| Tasks |\n---------" : "-------------\n| Sub Tasks |\n-------------")}
+"; // display menu and selected task info
 
 
         Dictionary<ConsoleKey, int> options = new Dictionary<ConsoleKey, int> // negative values to distinguish them from list index
@@ -161,12 +169,42 @@ void Exit()
 
 void CreateNewTask(Task? parent = null)
 {
-    WriteLine(seperator);
+    Clear();
+    WriteLine("------------");
+    WriteLine("| New Task |");
+    WriteLine("------------");
+
     Write("Task Title: ");
     string title = ReadLine().Trim();
     if (string.IsNullOrEmpty(title)) return;
 
-    manager.AddTask(title, parent);
+    DateTime? dueDate = null;
+    Write("Due Date (yyyy-mm-dd) (optional): ");
+    string dueDateInput = ReadLine().Trim();
+
+    WriteLine();
+
+    if (string.IsNullOrEmpty(dueDateInput))
+    {
+        WriteLine("No due date set.");
+        ReadKey(true);
+    }
+    else
+    {
+        if (DateTime.TryParse(dueDateInput, out DateTime parsedDate))
+        {
+            dueDate = parsedDate;
+        }
+        else
+        {
+            Write("Invalid date format. No due date set.");
+            ReadKey(true);
+        }
+    }
+
+    if (string.IsNullOrEmpty(title)) return;
+
+    manager.AddTask(title, parent, dueDate);
 }
 
 void EditTask(Task task)
@@ -189,7 +227,7 @@ string GetTaskPath(Task? task)
 {
     if (task == null)
     {
-        return "(no task selected.)";
+        return "";
     }
 
     List<Task> parents = new();

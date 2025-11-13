@@ -8,7 +8,7 @@
     public DateTime CreatedAt { get; }
     public DateTime? DueDate;
 
-    private bool _isCompleted;
+    protected bool _isCompleted; // protected for RecurringTask inherited class
 
     public Task? Parent { get; }
 

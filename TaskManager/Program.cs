@@ -71,7 +71,7 @@ void ViewTasks(Task? selectedTask = null)
 
         List<Task> tasks = selectedTask == null ? manager.RootTasks : selectedTask.SubTasks;
 
-        string selectedTaskPath = GetTaskPath(selectedTask);
+        string selectedTaskPath = TaskPath(selectedTask);
         string prompt = $@"
 -----------
 | Options |
@@ -82,14 +82,15 @@ void ViewTasks(Task? selectedTask = null)
 [ 3 ]     - delete task
 [ 4 ]     - mark as completed
 [ 5 ]     - go back
-[ 6 ]     - main menu
+[ ESC ]   - main menu
 {separator}
 {(selectedTask != null ? 
 $"-------------\n| Task Info |\n{separator}\nSelected: {selectedTaskPath}\n---------" +
 $"\nDescription: {selectedTask.Description}\n{separator}" +
-$"\nDue at: {(selectedTask.DueDate != null ? selectedTask.DueDate?.ToString(dateFormat) +$" | {(selectedTask.DueDate.Value - selectedTask.CreatedAt).Days} days" : "-")}" +
-$"\nCreated at: {selectedTask.CreatedAt.ToString(dateFormat)}" +
 $"\nCompleted: {(selectedTask.IsCompleted ? "Yes" : "No")}" +
+$"\nRepeats: {(selectedTask is RecurringTask r ? $"every {r.IntervalDays} {(r.IntervalDays > 1 ? "days" : "day")}" : "No")}" +
+$"\nDue at: {(selectedTask.DueDate != null ? selectedTask.DueDate?.ToString(dateFormat) + $" | {(selectedTask.DueDate.Value - selectedTask.CreatedAt).Days} days" : "-")}" +
+$"\nCreated at: {selectedTask.CreatedAt.ToString(dateFormat)}" +
 $"\n{separator}" +
 "\n-------------\n| Sub Tasks |" : "---------\n| Tasks |")}
 {separator}"; // display menu and selected task info
@@ -102,10 +103,10 @@ $"\n{separator}" +
             { ConsoleKey.D3, -3 },
             { ConsoleKey.D4, -4 },
             { ConsoleKey.D5, -5 },
-            { ConsoleKey.D6, -6 },
+            { ConsoleKey.Escape, -6 },
         };
 
-        (string title, string info)[] tasksInfo = tasks.Select(t => (t.Title, $"| Completed: {(t.IsCompleted ? "Yes" : "No")} | Due: {(t.DueDate.HasValue ? $"{(t.DueDate.Value - DateTime.Now).Days} days" : "-")} |")).ToArray();
+        (string title, string info)[] tasksInfo = tasks.Select(t => (t.Title, $"| Completed: {(t.IsCompleted ? "Yes" : $"No {($"| Due: {(t.DueDate.HasValue ? $"{(t.DueDate.Value - DateTime.Now).Days} days" : "-")}")}")} |")).ToArray();
         Menu menu = new(tasksInfo, prompt, index);
         int selection = menu.Run(options);
 
@@ -199,7 +200,9 @@ void CreateNewTask(Task? parent = null)
 
     DateTime? dueDate = DateInput();
 
-    manager.AddTask(title, description, parent, dueDate);
+    int? interval = RecurringTaskInput("1");
+
+    manager.AddTask(title, description, parent, dueDate, interval);
 }
 
 void EditTask(Task task)
@@ -217,6 +220,17 @@ void EditTask(Task task)
 
     DateTime? dueDate = DateInput(task.DueDate?.ToString("yyyy-MM-dd"));
 
+    if (task is RecurringTask recurringTask) // polymorphism
+    {
+        string currentInterval = recurringTask.IntervalDays.ToString();
+        int? newInterval = RecurringTaskInput(currentInterval);
+        if (newInterval.HasValue)
+        {
+            recurringTask.IntervalDays = newInterval.Value;
+        }
+
+    }
+
     task.Title = title;
     task.Description = description;
     task.DueDate = dueDate;
@@ -232,7 +246,7 @@ void ToggleTaskIsCompleted(Task task)
     task.IsCompleted = !task.IsCompleted;
 }
 
-string GetTaskPath(Task? task)
+string TaskPath(Task? task)
 {
     if (task == null)
     {
@@ -245,7 +259,7 @@ string GetTaskPath(Task? task)
     while (current != null)
     {
         parents.Insert(0, current); // insert at start to maintain order
-        current = current.Parent;
+        current = current.Parent; // move up
     }
 
     string taskPath = "";
@@ -262,32 +276,68 @@ DateTime? DateInput(string? edit = null)
     DateTime? dueDate = null;
     if (edit == null) edit = "";
 
-    WriteLine($"Due Date ({dateFormat}): ");
-    string dueDateInput = ReadLineWithEdit(edit);
+    WriteLine($"(optional) Due Date ({dateFormat}): ");
+    string input = ReadLineWithEdit(edit);
 
     WriteLine();
 
-    if (string.IsNullOrEmpty(dueDateInput))
+    if (string.IsNullOrEmpty(input))
     {
         WriteLine("No due date set.");
         ReadKey(true);
     }
     else
     {
-        if (DateTime.TryParse(dueDateInput, out DateTime parsedDate))
+        if (DateTime.TryParse(input, out DateTime parsedDate))
         {
             dueDate = parsedDate;
         }
         else
         {
-            Write("Invalid date format. No due date set.");
+            WriteLine("Invalid date format. No due date set.");
             ReadKey(true);  
         }
     }
     return dueDate;
 }
 
-string ReadLineWithEdit(string initial)
+int? RecurringTaskInput(string? edit = null)
+{
+    int? interval = null;
+    if (edit == null) edit = "";
+
+    WriteLine($"(optional) Repeats every ? days: ");
+    string input = ReadLineWithEdit(edit);
+
+    WriteLine();
+
+    if (string.IsNullOrEmpty(input))
+    {
+        WriteLine("No interval set.");
+        ReadKey(true);
+    }
+    else
+    {
+        if (int.TryParse(input, out int parsedInterval))
+        {
+            if (parsedInterval < 1)
+            {
+                WriteLine("Interval must be greater than zero days. No interval set.");
+                ReadKey(true);
+                return null;
+            }
+            interval = parsedInterval;
+        }
+        else
+        {
+            WriteLine("Invalid format. No interval set.");
+            ReadKey(true);
+        }
+    }
+    return interval;
+}
+
+string ReadLineWithEdit(string initial) // keeps original text when editing
 {
     StringBuilder buffer = new StringBuilder(initial);
     int cursorPos = initial.Length;

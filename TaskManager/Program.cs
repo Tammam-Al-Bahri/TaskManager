@@ -1,12 +1,6 @@
 ﻿using System.Text;
 using static System.Console;
 
-//foreach (string arg in args)
-//{
-//    WriteLine(arg);
-//}
-
-
 string logo = @"
 --------------------------------------------------------------------------------------------------------------------
 
@@ -25,16 +19,85 @@ string logo = @"
 (Use the arrow or w and s keys to cycle though the options, and press enter to select an option.)
 --------------------------------------------------------------------------------------------------------------------";
 
-string separator = "----------------------------------------------------------";
+string separator = "------------------------------------------";
 string dateFormat = "yyyy-MM-dd";
 
+string path = "";
 TaskManager manager = new();
+
+HandleArgs();
 
 // start the program
 while (true)
 {
     MainMenu();
 }
+
+void HandleArgs()
+{
+    if (args.Length == 0)
+    {
+        WriteLine("ERROR: Use '-o [file name] [file path]' to open or '-n [file name] [file path]' to create new.");
+        Exit();
+    }
+
+    string command = args[0];
+
+    if (args.Length < 2)
+    {
+        WriteLine("ERROR: You must specify the file path.");
+        Exit();
+    }
+
+    string filePath = args[1];
+    if (Path.GetExtension(filePath).ToLower() != ".dat")
+        filePath += ".dat";
+
+    switch (command)
+    {
+        case "-o":
+            if (!File.Exists(filePath))
+            {
+                WriteLine("ERROR: File not found.");
+                Exit();
+            }
+
+            TaskManager? loaded = TaskManager.LoadBinary(filePath);
+            if (loaded == null)
+            {
+                WriteLine("ERROR: Failed to load project.");
+                Exit();
+            }
+            path = filePath;
+
+            manager = loaded;
+            break;
+
+        case "-n":
+            if(File.Exists(filePath))
+            {
+                WriteLine("This file already exists. Would you like to overwrite it?");
+                Write("y / n: ");
+                string input = ReadLine().Trim().ToLower();
+                if (input != "y")
+                {
+                    WriteLine("Cancelled.");
+                    Exit();
+                }
+
+            }
+
+            path = filePath;
+            manager.Save(filePath);
+            break;
+
+        default:
+            WriteLine("ERROR: Unknown command. Use '-o [file name] [file path]' or '-n [file name] [file path]'.");
+            Exit();
+            break;
+    }
+}
+
 
 void MainMenu()
 {
@@ -69,21 +132,22 @@ void ViewTasks(Task? selectedTask = null)
     {
         Title = $"{selectedTask?.Title ?? "Tasks"}"; // default title if no selected task
 
-        List<Task> tasks = selectedTask == null ? manager.RootTasks : selectedTask.SubTasks;
+        List<Task> tasks = selectedTask == null ? manager.RootTasks : manager.GetSubTasks(selectedTask);
 
         string selectedTaskPath = TaskPath(selectedTask);
         string prompt = $@"
 -----------
 | Options |
-{separator}
-[ ENTER ] - open task
-[ 1 ]     - new task
-[ 2 ]     - edit task
-[ 3 ]     - delete task
-[ 4 ]     - mark as completed
-[ 5 ]     - go back
-[ ESC ]   - main menu
-{separator}
+----------------------------------
+| [ ENTER ]  - open task         |
+| [ 1 ]      - new task          |
+| [ 2 ]      - edit task         |
+| [ 3 ]      - mark as completed |
+| [ 4 ]      - go back           |
+| [ DELETE ] - delete task       |
+| [ 0 ]      - save changes      |
+| [ ESC ]    - main menu         |
+----------------------------------
 {(selectedTask != null ? 
 $"-------------\n| Task Info |\n{separator}\nSelected: {selectedTaskPath}\n---------" +
 $"\nDescription: {selectedTask.Description}\n{separator}" +
@@ -102,11 +166,12 @@ $"\n{separator}" +
             { ConsoleKey.D2, -2 },
             { ConsoleKey.D3, -3 },
             { ConsoleKey.D4, -4 },
-            { ConsoleKey.D5, -5 },
-            { ConsoleKey.Escape, -6 },
+            { ConsoleKey.Delete, -5 },
+            { ConsoleKey.D0, -6 },
+            { ConsoleKey.Escape, -7 },
         };
 
-        (string title, string info)[] tasksInfo = tasks.Select(t => (t.Title, $"| Completed: {(t.IsCompleted ? "Yes" : $"No {($"| Due: {(t.DueDate.HasValue ? $"{(t.DueDate.Value - DateTime.Now).Days} days" : "-")}")}")} |")).ToArray();
+        (string title, string info)[] tasksInfo = tasks.Select(t => (t.Title, $"| ID: {t.Id} | Parent ID: {t.ParentId} | Completed: {(t.IsCompleted ? "Yes" : $"No {($"| Due: {(t.DueDate.HasValue ? $"{(t.DueDate.Value - DateTime.Now).Days} days" : "-")}")}")} |")).ToArray();
         Menu menu = new(tasksInfo, prompt, index);
         int selection = menu.Run(options);
 
@@ -133,30 +198,33 @@ $"\n{separator}" +
                 case -3:
                     if (tasks.Count == 0) break;
                     index = menu.SelectedIndex;
-                    DeleteTask(tasks[menu.SelectedIndex]);
-                    break;
-                case -4:
-                    if (tasks.Count == 0) break;
-                    index = menu.SelectedIndex;
                     ToggleTaskIsCompleted(tasks[menu.SelectedIndex]);
                     break;
-                case -5:
+                case -4:
                     if(selectedTask == null) // no task selected at rool level, return to main menu
                     {
                         return;
                     }
-                    if (selectedTask.Parent == null) // go to root level tasks
+                    if (selectedTask.ParentId == null) // go to root level tasks
                     {
                         index = manager.RootTasks.FindIndex(t => t == selectedTask);
                         selectedTask = null;
                     }
                     else // go back to parent task
                     {
-                        index = selectedTask.Parent.SubTasks.FindIndex(t => t == selectedTask);
-                        selectedTask = selectedTask.Parent;
+                        index = manager.GetTaskFromId(selectedTask.ParentId.Value).SubTaskIds.FindIndex(t => t == selectedTask.Id);
+                        selectedTask = manager.GetTaskFromId(selectedTask.ParentId.Value);
                     }
                     break;
+                case -5:
+                    if (tasks.Count == 0) break;
+                    index = menu.SelectedIndex;
+                    DeleteTask(tasks[menu.SelectedIndex]);
+                    break;
                 case -6:
+                    manager.Save(path);
+                    break;
+                case -7:
                     return;
             }
         }
@@ -166,7 +234,7 @@ $"\n{separator}" +
 
 void Account() // TODO (probably rename this method)
 {
-
+    // yeah I don't think I'm gonna make user accounts
 }
 
 void DisplayHelpInfo() // TODO
@@ -248,18 +316,20 @@ void ToggleTaskIsCompleted(Task task)
 
 string TaskPath(Task? task)
 {
-    if (task == null)
-    {
-        return "-";
-    }
+    if (task == null) return "-";
 
     List<Task> parents = new();
 
-    Task? current = task.Parent;
-    while (current != null)
+    Task? current = task;
+
+    while (current.ParentId != null)
     {
+        current = manager.GetTaskFromId(current.ParentId.Value); // move up
+
+        if (current == null)
+            break;
+
         parents.Insert(0, current); // insert at start to maintain order
-        current = current.Parent; // move up
     }
 
     string taskPath = "";

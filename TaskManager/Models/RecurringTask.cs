@@ -17,15 +17,15 @@
         }
     }
 
-    public RecurringTask(int id, string title, string description, int intervalDays, Task? parent = null, DateTime? dueDate = null)
-        : base(id, title, description, parent, dueDate)
+    public RecurringTask(int id, string title, string description, int intervalDays, bool isCompleted, int? parentId = null, DateTime? dueDate = null)
+        : base(id, title, description, isCompleted, parentId, dueDate)
     {
         _intervalDays = intervalDays;
     }
 
-    public void ResetForNextOccurrence() // mark incomplete and move due date forward
+    public void ResetForNextOccurrence() // mark incomplete and move due date
     {
-        _isCompleted = false;
+        IsCompleted = false;
         if (DueDate.HasValue)
             DueDate = DueDate.Value.AddDays(IntervalDays);
         else

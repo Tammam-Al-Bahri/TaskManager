@@ -6,7 +6,7 @@
 
     public List<Task> RootTasks => _rootTasks;
 
-    public void AddTask(string title, string description, Task? parent, DateTime? dueDate, int? interval)
+    public Task AddTask(string title, string description, Task? parent, DateTime? dueDate, int? interval)
     {
         Task task;
 
@@ -29,6 +29,7 @@
         {
             parent.SubTaskIds.Add(task.Id);
         }
+        return task;
     }
 
     public Task? GetTaskFromId(int id)
@@ -54,18 +55,18 @@
             parent?.SubTaskIds.Remove(task.Id);
         }
 
-        // removes all subtasks recursively
         DeleteSubTasks(task);
 
         // remove this task
         _allTasks.Remove(task.Id);
     }
 
+    // removes all subtasks recursively
     private void DeleteSubTasks(Task task)
     {
         foreach (int childId in task.SubTaskIds.ToList())
         {
-            var child = GetTaskFromId(childId);
+            Task child = GetTaskFromId(childId);
             if (child != null)
             {
                 DeleteSubTasks(child);
@@ -75,6 +76,37 @@
 
         task.SubTaskIds.Clear();
     }
+
+    public void UpdateIsCompleteUpwards(Task task)
+    {
+        // go up
+        Task? current = task;
+
+        while (current.ParentId != null)
+        {
+            Task? parent = GetTaskFromId(current.ParentId.Value);
+            if (parent == null) break;
+
+            // parent must be complete only if all children are complete
+            bool allCompleted = true;
+            foreach (int childId in parent.SubTaskIds)
+            {
+                Task child = _allTasks[childId];
+                if (!child.IsCompleted)
+                {
+                    allCompleted = false;
+                    break;
+                }
+            }
+
+            parent.IsCompleted = allCompleted;
+
+            // move up
+            current = parent;
+        }
+    }
+
+
 
     public void Save(string fileName, string? filePath = null)
     {
@@ -150,7 +182,7 @@
         using FileStream fs = File.Open(fullPath, FileMode.Open);
         using BinaryReader br = new BinaryReader(fs);
 
-        // nextId
+        // next id
         manager._nextId = br.ReadInt32();
 
         // how many tasks

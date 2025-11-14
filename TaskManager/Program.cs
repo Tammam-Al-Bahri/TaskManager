@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Threading.Tasks;
 using static System.Console;
 
 string logo = @"
@@ -136,18 +137,18 @@ void ViewTasks(Task? selectedTask = null)
 
         string selectedTaskPath = TaskPath(selectedTask);
         string prompt = $@"
------------
-| Options |
-----------------------------------
-| [ ENTER ]  - open task         |
-| [ 1 ]      - new task          |
-| [ 2 ]      - edit task         |
-| [ 3 ]      - mark as completed |
-| [ 4 ]      - go back           |
-| [ DELETE ] - delete task       |
-| [ 0 ]      - save changes      |
-| [ ESC ]    - main menu         |
-----------------------------------
+-----------                          -----------
+| Options |                          | Filters |
+----------------------------------   ----------------------------------
+| [ ENTER ]  - open task         |   | [ ] - 
+| [ 1 ]      - new task          |   |
+| [ 2 ]      - edit task         |   |
+| [ 3 ]      - mark as completed |   |
+| [ 4 ]      - go back           |   |
+| [ DELETE ] - delete task       |   |
+| [ 0 ]      - save changes      |   |
+| [ ESC ]    - main menu         |   |
+----------------------------------   ----------------------------------
 {(selectedTask != null ? 
 $"-------------\n| Task Info |\n{separator}\nSelected: {selectedTaskPath}\n---------" +
 $"\nDescription: {selectedTask.Description}\n{separator}" +
@@ -187,8 +188,8 @@ $"\n{separator}" +
             switch (selection)
             {
                 case -1:
-                    CreateNewTask(selectedTask); // create sub task
-                    index = tasks.Count - 1;
+                    bool created = CreateNewTask(selectedTask); // create sub task
+                    if (created) index = tasks.Count - 1; // highlight new task if it's created
                     break;
                 case -2:
                     if (tasks.Count == 0) break;
@@ -223,6 +224,7 @@ $"\n{separator}" +
                     break;
                 case -6:
                     manager.Save(path);
+                    index = menu.SelectedIndex;
                     break;
                 case -7:
                     return;
@@ -250,7 +252,7 @@ void Exit()
 }
 
 
-void CreateNewTask(Task? parent = null)
+bool CreateNewTask(Task? parent = null)
 {
     Clear();
     WriteLine("------------");
@@ -259,7 +261,7 @@ void CreateNewTask(Task? parent = null)
 
     WriteLine("Task Title: ");
     string title = ReadLine().Trim();
-    if (string.IsNullOrEmpty(title)) return;
+    if (string.IsNullOrEmpty(title)) return false;
     WriteLine("");
 
     WriteLine("Task Description: ");
@@ -270,7 +272,9 @@ void CreateNewTask(Task? parent = null)
 
     int? interval = RecurringTaskInput("1");
 
-    manager.AddTask(title, description, parent, dueDate, interval);
+    Task task = manager.AddTask(title, description, parent, dueDate, interval);
+    manager.UpdateIsCompleteUpwards(task);
+    return true;
 }
 
 void EditTask(Task task)
@@ -312,6 +316,7 @@ void DeleteTask(Task task)
 void ToggleTaskIsCompleted(Task task)
 {
     task.IsCompleted = !task.IsCompleted;
+    manager.UpdateIsCompleteUpwards(task);
 }
 
 string TaskPath(Task? task)

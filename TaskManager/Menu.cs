@@ -9,6 +9,9 @@ public class Menu
     private (string title, string info)[] _options;
     public int SelectedIndex { get { return _selectedIndex; } }
 
+    public static ConsoleColor background = ConsoleColor.Gray;
+    public static ConsoleColor foreground = ConsoleColor.DarkGreen;
+
     public Menu((string title, string info)[] options, string prompt, int? selectedIndex = null)
     {
         if (selectedIndex.HasValue)
@@ -47,19 +50,20 @@ public class Menu
                 {
                     prefix = ">";
                     info = _options[i].info;
-                    ForegroundColor = ConsoleColor.Black;
-                    BackgroundColor = ConsoleColor.White;
+                    ForegroundColor = background;
+                    BackgroundColor = foreground;
                 }
                 else
                 {
                     prefix = " ";
                     info = "";
-                    ForegroundColor = ConsoleColor.White;
-                    BackgroundColor = ConsoleColor.Black;
+                    ForegroundColor = foreground;
+                    BackgroundColor = background;
                 }
 
                 Write($"{prefix} [ {currentOption} ]");
-                ResetColor();
+                ForegroundColor = foreground;
+                BackgroundColor = background;
                 WriteLine((string.IsNullOrEmpty(info) ? "" : $" - {info}"));
             }
         }
@@ -71,13 +75,14 @@ public class Menu
 
         ConsoleKey keyPressed = new();
 
+        Clear();
+        Display();
+
         while (keyPressed != ConsoleKey.Enter)
         {
-            Clear();
-            Display();
-
             ConsoleKeyInfo keyInfo = ReadKey(true);
             keyPressed = keyInfo.Key;
+
 
             if (keyPressed == ConsoleKey.UpArrow || keyPressed == ConsoleKey.W)
             {
@@ -105,6 +110,11 @@ public class Menu
             {
                 CursorVisible = true;
                 return mappedValue; // options for switch statement
+            }
+            if (keyPressed == ConsoleKey.UpArrow || keyPressed == ConsoleKey.W || keyPressed == ConsoleKey.DownArrow || keyPressed == ConsoleKey.S || (keyMap != null && keyMap.TryGetValue(keyPressed, out int m)))
+            {
+                Clear();
+                Display();
             }
         }
 

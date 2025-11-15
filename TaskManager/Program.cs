@@ -29,6 +29,9 @@ TaskManager manager = new();
 
 HandleArgs();
 
+BackgroundColor = Menu.background;
+ForegroundColor = Menu.foreground;
+
 // start the program
 while (true)
 {
@@ -138,7 +141,8 @@ void ManageTasks(Task? selectedTask = null)
     {
         Title = $"{selectedTask?.Title ?? "Tasks"}"; // ?? for default window title if no selected task
 
-        IEnumerable<Task> baseTasks = selectedTask == null ? manager.RootTasks : manager.GetSubTasks(selectedTask);
+        // as parallel to use multiple threads
+        IEnumerable<Task> baseTasks = (selectedTask == null ? manager.RootTasks : manager.GetSubTasks(selectedTask)).AsParallel();
 
         // filter
         switch (filter)
@@ -243,10 +247,6 @@ void ManageTasks(Task? selectedTask = null)
                     break;
                 case -6:
                     manager.Save(path);
-                    Clear();
-                    WriteLine("Changes saved!");
-                    Write(path);
-                    ReadKey(true);
                     index = menu.SelectedIndex;
                     break;
                 case -7: // return (to MainMenu())

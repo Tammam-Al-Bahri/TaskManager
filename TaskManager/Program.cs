@@ -1,26 +1,27 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using System.Threading.Tasks;
 using static System.Console;
 
 string logo = @"
---------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+|                                                                                                                      |
+|  /$$$$$$$$                  /$$             /$$      /$$                                                             |
+| |__  $$__/                 | $$            | $$$    /$$$                                                             |
+|    | $$  /$$$$$$   /$$$$$$$| $$   /$$      | $$$$  /$$$$  /$$$$$$  /$$$$$$$   /$$$$$$   /$$$$$$   /$$$$$$   /$$$$$$  |
+|    | $$ |____  $$ /$$_____/| $$  /$$/      | $$ $$/$$ $$ |____  $$| $$__  $$ |____  $$ /$$__  $$ /$$__  $$ /$$__  $$ |
+|    | $$  /$$$$$$$|  $$$$$$ | $$$$$$/       | $$  $$$| $$  /$$$$$$$| $$  \ $$  /$$$$$$$| $$  \ $$| $$$$$$$$| $$  \__/ |
+|    | $$ /$$__  $$ \____  $$| $$_  $$       | $$\  $ | $$ /$$__  $$| $$  | $$ /$$__  $$| $$  | $$| $$_____/| $$       |
+|    | $$|  $$$$$$$ /$$$$$$$/| $$ \  $$      | $$ \/  | $$|  $$$$$$$| $$  | $$|  $$$$$$$|  $$$$$$$|  $$$$$$$| $$       |
+|    |__/ \_______/|_______/ |__/  \__/      |__/     |__/ \_______/|__/  |__/ \_______/ \____  $$ \_______/|__/       |
+|                                                                                        /$$  \ $$                     |
+|                                                                                       |  $$$$$$/                     |
+|                                                                                        \______/                      |
+|                                                                                                                      |
+|          (Use the arrow or w and s keys to cycle though the options, and press enter to select an option.)           |
+------------------------------------------------------------------------------------------------------------------------";
 
-  /$$$$$$$$                  /$$             /$$      /$$                                                            
- |__  $$__/                 | $$            | $$$    /$$$                                                            
-    | $$  /$$$$$$   /$$$$$$$| $$   /$$      | $$$$  /$$$$  /$$$$$$  /$$$$$$$   /$$$$$$   /$$$$$$   /$$$$$$   /$$$$$$ 
-    | $$ |____  $$ /$$_____/| $$  /$$/      | $$ $$/$$ $$ |____  $$| $$__  $$ |____  $$ /$$__  $$ /$$__  $$ /$$__  $$
-    | $$  /$$$$$$$|  $$$$$$ | $$$$$$/       | $$  $$$| $$  /$$$$$$$| $$  \ $$  /$$$$$$$| $$  \ $$| $$$$$$$$| $$  \__/
-    | $$ /$$__  $$ \____  $$| $$_  $$       | $$\  $ | $$ /$$__  $$| $$  | $$ /$$__  $$| $$  | $$| $$_____/| $$      
-    | $$|  $$$$$$$ /$$$$$$$/| $$ \  $$      | $$ \/  | $$|  $$$$$$$| $$  | $$|  $$$$$$$|  $$$$$$$|  $$$$$$$| $$      
-    |__/ \_______/|_______/ |__/  \__/      |__/     |__/ \_______/|__/  |__/ \_______/ \____  $$ \_______/|__/      
-                                                                                        /$$  \ $$                    
-                                                                                       |  $$$$$$/                    
-                                                                                        \______/                     
-
-(Use the arrow or w and s keys to cycle though the options, and press enter to select an option.)
---------------------------------------------------------------------------------------------------------------------";
-
-string separator = "------------------------------------------";
+string separator = "-------------------------------------------------------------------------";
 string dateFormat = "yyyy-MM-dd";
 
 string path = "";
@@ -107,12 +108,13 @@ void MainMenu()
     (string, string)[] options = [("Tasks", "view and manage tasks"), ("Account", "change password"), ("Help", ""), ("Exit", "")];
 
     Menu menu = new Menu(options, prompt);
-    int selectedIndex = menu.Run();
+    int selection = menu.Run();
 
-    switch (selectedIndex)
+
+    switch (selection)
     {
         case 0:
-            ViewTasks();
+            ManageTasks();
             break;
         case 1:
             Account();
@@ -126,53 +128,70 @@ void MainMenu()
     }
 }
 
-void ViewTasks(Task? selectedTask = null)
+void ManageTasks(Task? selectedTask = null)
 {
-    int index = 0; // for selecting task when going back
+    int index = 0; // for highlighting correct task in menu (going back highlights parent, creating new tasks highlights it, ...)
+
+    TaskSort sort = TaskSort.None;
+    TaskFilter filter = TaskFilter.None;
     while (true)
     {
-        Title = $"{selectedTask?.Title ?? "Tasks"}"; // default title if no selected task
+        Title = $"{selectedTask?.Title ?? "Tasks"}"; // ?? for default window title if no selected task
 
-        List<Task> tasks = selectedTask == null ? manager.RootTasks : manager.GetSubTasks(selectedTask);
+        IEnumerable<Task> baseTasks = selectedTask == null ? manager.RootTasks : manager.GetSubTasks(selectedTask);
+
+        // filter
+        switch (filter)
+        {
+            case TaskFilter.Incomplete:
+                baseTasks = baseTasks.Where(t => !t.IsCompleted);
+                break;
+            case TaskFilter.Complete:
+                baseTasks = baseTasks.Where(t => t.IsCompleted);
+                break;
+            case TaskFilter.Overdue:
+                baseTasks = baseTasks.Where(t => t.DueDate != null && t.DueDate < DateTime.Now);
+                break;
+            case TaskFilter.Recurring:
+                baseTasks = baseTasks.Where(t => t is RecurringTask);
+                break;
+        }
+
+        // sort
+        switch (sort)
+        {
+            case TaskSort.ByTitle:
+                baseTasks = baseTasks.OrderBy(t => t.Title);
+                break;
+            case TaskSort.ByDueDate:
+                baseTasks = baseTasks.OrderBy(t => t.DueDate ?? DateTime.MaxValue); // no due date at end
+                break;
+        }
+
+        List<Task> tasks = baseTasks.ToList();
 
         string selectedTaskPath = TaskPath(selectedTask);
-        string prompt = $@"
------------                          -----------
-| Options |                          | Filters |
-----------------------------------   ----------------------------------
-| [ ENTER ]  - open task         |   | [ ] - 
-| [ 1 ]      - new task          |   |
-| [ 2 ]      - edit task         |   |
-| [ 3 ]      - mark as completed |   |
-| [ 4 ]      - go back           |   |
-| [ DELETE ] - delete task       |   |
-| [ 0 ]      - save changes      |   |
-| [ ESC ]    - main menu         |   |
-----------------------------------   ----------------------------------
-{(selectedTask != null ? 
-$"-------------\n| Task Info |\n{separator}\nSelected: {selectedTaskPath}\n---------" +
-$"\nDescription: {selectedTask.Description}\n{separator}" +
-$"\nCompleted: {(selectedTask.IsCompleted ? "Yes" : "No")}" +
-$"\nRepeats: {(selectedTask is RecurringTask r ? $"every {r.IntervalDays} {(r.IntervalDays > 1 ? "days" : "day")}" : "No")}" +
-$"\nDue at: {(selectedTask.DueDate != null ? selectedTask.DueDate?.ToString(dateFormat) + $" | {(selectedTask.DueDate.Value - selectedTask.CreatedAt).Days} days" : "-")}" +
-$"\nCreated at: {selectedTask.CreatedAt.ToString(dateFormat)}" +
-$"\n{separator}" +
-"\n-------------\n| Sub Tasks |" : "---------\n| Tasks |")}
-{separator}"; // display menu and selected task info
+        string prompt = TaskMenu(selectedTask, filter, sort);
 
 
         Dictionary<ConsoleKey, int> options = new Dictionary<ConsoleKey, int> // negative values to distinguish them from list index
         {
-            { ConsoleKey.D1, -1 },
-            { ConsoleKey.D2, -2 },
-            { ConsoleKey.D3, -3 },
-            { ConsoleKey.D4, -4 },
-            { ConsoleKey.Delete, -5 },
-            { ConsoleKey.D0, -6 },
-            { ConsoleKey.Escape, -7 },
+            { ConsoleKey.D1, -1 }, // new
+            { ConsoleKey.D2, -2 }, // edit
+            { ConsoleKey.D3, -3 }, // mark as complete
+            { ConsoleKey.D4, -4 }, // go back
+            { ConsoleKey.Delete, -5 }, // delete
+            { ConsoleKey.D0, -6 }, // save changes
+            { ConsoleKey.Escape, -7 }, // main menu
+            { ConsoleKey.F10, -10 }, // clear sorting and filters
+            { ConsoleKey.F1, -11 }, // sort by title
+            { ConsoleKey.F2, -12 }, // sort by due date
+            { ConsoleKey.F3, -13 }, // filter complete / incomplete
+            { ConsoleKey.F4, -14 }, // filter overdue
+            { ConsoleKey.F5, -15 }, // filter recurring
         };
 
-        (string title, string info)[] tasksInfo = tasks.Select(t => (t.Title, $"| ID: {t.Id} | Parent ID: {t.ParentId} | Completed: {(t.IsCompleted ? "Yes" : $"No {($"| Due: {(t.DueDate.HasValue ? $"{(t.DueDate.Value - DateTime.Now).Days} days" : "-")}")}")} |")).ToArray();
+        (string title, string info)[] tasksInfo = tasks.Select(t => (t.Title, TaskInfo(t))).ToArray(); // tuple
         Menu menu = new(tasksInfo, prompt, index);
         int selection = menu.Run(options);
 
@@ -188,8 +207,8 @@ $"\n{separator}" +
             switch (selection)
             {
                 case -1:
-                    bool created = CreateNewTask(selectedTask); // create sub task
-                    if (created) index = tasks.Count - 1; // highlight new task if it's created
+                    bool created = CreateNewTask(selectedTask);
+                    if (created) index = tasks.Count; // highlight new task if it's created
                     break;
                 case -2:
                     if (tasks.Count == 0) break;
@@ -224,10 +243,81 @@ $"\n{separator}" +
                     break;
                 case -6:
                     manager.Save(path);
+                    Clear();
+                    WriteLine("Changes saved!");
+                    Write(path);
+                    ReadKey(true);
                     index = menu.SelectedIndex;
                     break;
-                case -7:
+                case -7: // return (to MainMenu())
                     return;
+                case -10:
+                    sort = TaskSort.None;
+                    filter = TaskFilter.None;
+                    index = 0;
+                    break;
+                case -11:
+                    if(sort == TaskSort.ByTitle) // toggle
+                    {
+                        sort = TaskSort.None;
+                        break;
+                    }
+                    sort = TaskSort.ByTitle;
+                    index = 0;
+                    break;
+                case -12:
+                    if (sort == TaskSort.ByDueDate)
+                    {
+                        sort = TaskSort.None;
+                        break;
+                    }
+                    sort = TaskSort.ByDueDate;
+                    index = 0;
+                    break;
+                case -13:
+                    // cycle between none complete and incomplete filter
+                    if (filter != TaskFilter.Complete && filter != TaskFilter.Incomplete)
+                    {
+                        filter = TaskFilter.Complete;
+                        index = 0;
+                        break;
+                    }
+                    if (filter == TaskFilter.Complete)
+                    {
+                        filter = TaskFilter.Incomplete;
+                        index = 0;
+                        break;
+                    }
+                    if (filter == TaskFilter.Incomplete)
+                    {
+                        filter = TaskFilter.None;
+                        index = 0;
+                        break;
+                    }
+                    filter = TaskFilter.Complete;
+                    index = 0;
+                    break;
+                case -14:
+                    if(filter == TaskFilter.Overdue)
+                    {
+                        filter = TaskFilter.None;
+                        index = 0;
+                        break;
+                    }
+                    filter = TaskFilter.Overdue;
+                    index = 0;
+                    break;
+                case -15:
+                    if (filter == TaskFilter.Recurring)
+                    {
+                        filter = TaskFilter.None;
+                        index = 0;
+                        break;
+                    }
+                    filter = TaskFilter.Recurring;
+                    index = 0;
+                    break;
+
             }
         }
     }
@@ -252,8 +342,9 @@ void Exit()
 }
 
 
-bool CreateNewTask(Task? parent = null)
+bool CreateNewTask(Task? parent)
 {
+    Title = "New Task";
     Clear();
     WriteLine("------------");
     WriteLine("| New Task |");
@@ -270,7 +361,7 @@ bool CreateNewTask(Task? parent = null)
 
     DateTime? dueDate = DateInput();
 
-    int? interval = RecurringTaskInput("1");
+    int? interval = RecurringTaskInput("");
 
     Task task = manager.AddTask(title, description, parent, dueDate, interval);
     manager.UpdateIsCompleteUpwards(task);
@@ -279,6 +370,7 @@ bool CreateNewTask(Task? parent = null)
 
 void EditTask(Task task)
 {
+    Title = "Edit task";
     Clear();
     WriteLine(separator);
     WriteLine("New title: ");
@@ -319,6 +411,37 @@ void ToggleTaskIsCompleted(Task task)
     manager.UpdateIsCompleteUpwards(task);
 }
 
+// menu options and selected task info
+string TaskMenu(Task? task, TaskFilter filter, TaskSort sort)
+{
+    string menu = $@"
+___________                            ___________________
+| Options |                            | Sort and Filter |
+------------------------------------   -----------------------------------
+|   [ ENTER ]  - open task         |   | {(sort == TaskSort.ByTitle ? ">" : " ")} [ F1 ] - sort by title        |
+|   [ 1 ]      - new task          |   | {(sort == TaskSort.ByDueDate ? ">" : " ")} [ F2 ] - sort by due date     |
+|   [ 2 ]      - edit task         |   |---------------------------------|
+|   [ 3 ]      - mark as completed |   | {(filter == TaskFilter.Complete || filter == TaskFilter.Incomplete ? ">" : " ")} [ F3 ] - filter {(filter != TaskFilter.Complete && filter != TaskFilter.Incomplete ? "complete  " : (filter == TaskFilter.Complete ? "complete  " : "incomplete"))}    |
+|   [ 4 ]      - go back           |   | {(filter == TaskFilter.Overdue ? ">" : " ")} [ F4 ] - filter overdue       |
+|   [ DELETE ] - delete task       |   | {(filter == TaskFilter.Recurring ? ">" : " ")} [ F5 ] - filter recurring     |
+|   [ 0 ]      - save changes      |   |---------------------------------|
+|   [ ESC ]    - main menu         |   |   [ F10 ] - clear               |
+------------------------------------   -----------------------------------
+{(task != null ?
+$"_____________\n| Task Info |\n{separator}\nSelected: {task}\n{separator}" +
+$"\nDescription: {task.Description}\n{separator}" +
+$"\nCompleted: {(task.IsCompleted ? "Yes" : "No")}" +
+$"\nRepeats: {(task is RecurringTask r ? $"every {r.IntervalDays} {(r.IntervalDays > 1 ? "days" : "day")}" : "No")}" +
+$"\nDue at: {(task.DueDate != null ? task.DueDate?.ToString(dateFormat) + $" | {(task.DueDate.Value - task.CreatedAt).Days} days" : "-")}" +
+$"\nCreated at: {task.CreatedAt.ToString(dateFormat)}" +
+$"\n{separator}" +
+"\n_____________\n| Sub Tasks |" : "_________\n| Tasks |")}
+{separator}";
+
+    return menu;
+}
+
+
 string TaskPath(Task? task)
 {
     if (task == null) return "-";
@@ -344,6 +467,12 @@ string TaskPath(Task? task)
     }
 
     return $"{taskPath}[ {task.Title} ]";
+}
+
+string TaskInfo(Task task)
+{
+    string i = $"| Completed: {(task.IsCompleted ? "Yes" : "No")} | Due: {(task.DueDate.HasValue ? $"{(task.DueDate.Value - DateTime.Now).Days} days" : "-")}";
+    return i;
 }
 
 DateTime? DateInput(string? edit = null)
@@ -481,3 +610,7 @@ void RewriteBuffer(StringBuilder buffer, int cursorPos)
     Write(buffer.ToString());
     CursorLeft = cursorPos;
 }
+
+// for ManageTasks menu
+enum TaskSort { None, ByTitle, ByDueDate }
+enum TaskFilter { None, Incomplete, Complete, Overdue, Recurring }

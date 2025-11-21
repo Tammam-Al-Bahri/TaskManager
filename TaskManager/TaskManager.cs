@@ -4,6 +4,11 @@
     private readonly Dictionary<int, Task> _allTasks = new();
     private int _nextId = 1; // for auto increment
 
+    // for parallel thread safety
+    private readonly object _dictLock = new();
+    private readonly object _listLock = new();
+
+
     public List<Task> RootTasks => _rootTasks;
 
     public Task AddTask(string title, string description, Task? parent, DateTime? dueDate, int? interval)
@@ -39,7 +44,22 @@
 
     public List<Task> GetSubTasks(Task task)
     {
-        return task.SubTaskIds.Select(id => GetTaskFromId(id)).Where(t => t != null).ToList()!;
+        List<Task> result = new();
+
+        Parallel.ForEach(task.SubTaskIds, id =>
+        {
+            Task? t;
+            lock (_dictLock)
+                t = _allTasks[id];
+
+            if (t != null)
+            {
+                lock (_listLock)
+                    result.Add(t);
+            }
+        });
+
+        return result;
     }
 
     public void DeleteTask(Task task)
@@ -64,22 +84,24 @@
     // removes all subtasks recursively
     private void DeleteSubTasks(Task task)
     {
-        foreach (int childId in task.SubTaskIds.ToList())
+        Parallel.ForEach(task.SubTaskIds.ToList(), childId =>
         {
-            Task child = GetTaskFromId(childId);
+            Task? child;
+            lock (_dictLock)
+                child = _allTasks.TryGetValue(childId, out var x) ? x : null;
+
             if (child != null)
-            {
                 DeleteSubTasks(child);
-                _allTasks.Remove(child.Id);
-            }
-        }
+
+            lock (_dictLock)
+                _allTasks.Remove(childId);
+        });
 
         task.SubTaskIds.Clear();
     }
 
     public void UpdateIsCompleteUpwards(Task task)
     {
-        // go up
         Task? current = task;
 
         while (current.ParentId != null)
@@ -89,15 +111,18 @@
 
             // parent must be complete only if all children are complete
             bool allCompleted = true;
-            foreach (int childId in parent.SubTaskIds)
+            Parallel.ForEach(parent.SubTaskIds, (childId, state) =>
             {
-                Task child = _allTasks[childId];
+                Task child;
+                lock (_dictLock)
+                    child = _allTasks[childId];
+
                 if (!child.IsCompleted)
                 {
                     allCompleted = false;
-                    break;
+                    state.Stop();
                 }
-            }
+            });
 
             parent.IsCompleted = allCompleted;
 
@@ -230,14 +255,22 @@
             loaded.Add(t);
         }
 
-        // rebuild dictionary and root tasks
-        foreach (Task t in loaded)
+    // rebuild dictionary and root tasks in parallel
+    // locks to make this thread safe
+    object dictLock = new();
+        object listLock = new();
+
+        Parallel.ForEach(loaded, t =>
         {
-            manager._allTasks[t.Id] = t;
+            lock (dictLock)
+                manager._allTasks[t.Id] = t;
 
             if (t.ParentId == null)
-                manager._rootTasks.Add(t);
-        }
+            {
+                lock (listLock)
+                    manager._rootTasks.Add(t);
+            }
+        });
 
         return manager;
     }

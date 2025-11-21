@@ -1,6 +1,4 @@
-﻿using System;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 using static System.Console;
 
 string logo = @"
@@ -183,7 +181,7 @@ void ManageTasks(Task? selectedTask = null)
             { ConsoleKey.D1, -1 }, // new
             { ConsoleKey.D2, -2 }, // edit
             { ConsoleKey.D3, -3 }, // mark as complete
-            { ConsoleKey.D4, -4 }, // go back
+            { ConsoleKey.Backspace, -4 }, // go back
             { ConsoleKey.Delete, -5 }, // delete
             { ConsoleKey.D0, -6 }, // save changes
             { ConsoleKey.Escape, -7 }, // main menu
@@ -415,20 +413,20 @@ void ToggleTaskIsCompleted(Task task)
 string TaskMenu(Task? task, TaskFilter filter, TaskSort sort)
 {
     string menu = $@"
-___________                            ___________________
-| Options |                            | Sort and Filter |
-------------------------------------   -----------------------------------
-|   [ ENTER ]  - open task         |   | {(sort == TaskSort.ByTitle ? ">" : " ")} [ F1 ] - sort by title        |
-|   [ 1 ]      - new task          |   | {(sort == TaskSort.ByDueDate ? ">" : " ")} [ F2 ] - sort by due date     |
-|   [ 2 ]      - edit task         |   |---------------------------------|
-|   [ 3 ]      - mark as completed |   | {(filter == TaskFilter.Complete || filter == TaskFilter.Incomplete ? ">" : " ")} [ F3 ] - filter {(filter != TaskFilter.Complete && filter != TaskFilter.Incomplete ? "complete  " : (filter == TaskFilter.Complete ? "complete  " : "incomplete"))}    |
-|   [ 4 ]      - go back           |   | {(filter == TaskFilter.Overdue ? ">" : " ")} [ F4 ] - filter overdue       |
-|   [ DELETE ] - delete task       |   | {(filter == TaskFilter.Recurring ? ">" : " ")} [ F5 ] - filter recurring     |
-|   [ 0 ]      - save changes      |   |---------------------------------|
-|   [ ESC ]    - main menu         |   |   [ F10 ] - clear               |
-------------------------------------   -----------------------------------
+___________                               ___________________
+| Options |                               | Sort and Filter |
+---------------------------------------   -----------------------------------
+|   [ ENTER ]     - open task         |   | {(sort == TaskSort.ByTitle ? ">" : " ")} [ F1 ] - sort by title        |
+|   [ 1 ]         - new task          |   | {(sort == TaskSort.ByDueDate ? ">" : " ")} [ F2 ] - sort by due date     |
+|   [ 2 ]         - edit task         |   |---------------------------------|
+|   [ 3 ]         - mark as completed |   | {(filter == TaskFilter.Complete || filter == TaskFilter.Incomplete ? ">" : " ")} [ F3 ] - filter {(filter != TaskFilter.Complete && filter != TaskFilter.Incomplete ? "complete  " : (filter == TaskFilter.Complete ? "complete  " : "incomplete"))}    |
+|   [ BACKSPACE ] - go back           |   | {(filter == TaskFilter.Overdue ? ">" : " ")} [ F4 ] - filter overdue       |
+|   [ DELETE ]    - delete task       |   | {(filter == TaskFilter.Recurring ? ">" : " ")} [ F5 ] - filter recurring     |
+|   [ 0 ]         - save changes      |   |---------------------------------|
+|   [ ESC ]       - main menu         |   |   [ F10 ] - clear               |
+---------------------------------------   -----------------------------------
 {(task != null ?
-$"_____________\n| Task Info |\n{separator}\nSelected: {task}\n{separator}" +
+$"_____________\n| Task Info |\n{separator}\nSelected: {TaskPath(task)}\n{separator}" +
 $"\nDescription: {task.Description}\n{separator}" +
 $"\nCompleted: {(task.IsCompleted ? "Yes" : "No")}" +
 $"\nRepeats: {(task is RecurringTask r ? $"every {r.IntervalDays} {(r.IntervalDays > 1 ? "days" : "day")}" : "No")}" +

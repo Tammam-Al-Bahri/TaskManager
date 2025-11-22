@@ -27,9 +27,11 @@ TaskManager manager = new();
 
 HandleArgs();
 
-BackgroundColor = Menu.background;
-ForegroundColor = Menu.foreground;
-
+{ // put these in a scope since only needed here
+    MenuSettings settings = MenuSettings.Load();
+    BackgroundColor = settings.Background;
+    ForegroundColor = settings.Foreground;
+}
 // start the program
 while (true)
 {
@@ -106,7 +108,7 @@ void MainMenu()
 {
     Title = "Task Manager";
     string prompt = logo;
-    (string, string)[] options = [("Tasks", "view and manage tasks"), ("Account", "change password"), ("Help", ""), ("Exit", "")];
+    (string, string)[] options = [("Tasks", "view and manage tasks"), ("Display", "choose a theme"), ("Info", "about"), ("Exit", "have you saved changes first?")];
 
     Menu menu = new Menu(options, prompt);
     int selection = menu.Run();
@@ -118,10 +120,10 @@ void MainMenu()
             ManageTasks();
             break;
         case 1:
-            Account();
+            DisplaySettings();
             break;
         case 2:
-            DisplayHelpInfo();
+            DisplayInfo();
             break;
         case 3:
             Exit();
@@ -322,15 +324,100 @@ void ManageTasks(Task? selectedTask = null)
 
 }
 
-void Account() // TODO (probably rename this method)
+void DisplaySettings()
 {
-    // yeah I don't think I'm gonna make user accounts
+    (string, string)[] options = [("Background", "change background colour"),
+        ("Foreground", "change foreground colour"), ("Selection Background", "change selection background colour"),
+        ("Selection Foreground", "change selection foreground colour"), ("Main Menu", "return to main menu")];
+    string prompt = "Select Theme";
+
+
+    while (true)
+    {
+        Menu menu = new(options, prompt);
+        MenuSettings settings = MenuSettings.Load();
+        int selection = menu.Run();
+        switch (selection)
+        {
+            case 0:
+                settings.Background = DisplayColourSettings("Select Background Colour");
+                settings.Save();
+                break;
+            case 1:
+                settings.Foreground = DisplayColourSettings("Select Foreground Colour");
+                settings.Save();
+                break;
+            case 2:
+                settings.SelectionBackground = DisplayColourSettings("Select Selection Background Colour");
+                settings.Save();
+                break;
+            case 3:
+                settings.SelectionForeground = DisplayColourSettings("Select Selection Foreground Colour");
+                settings.Save();
+                break;
+            case 4:
+                BackgroundColor = settings.Background;
+                ForegroundColor = settings.Foreground;
+                return;
+        }
+        BackgroundColor = settings.Background;
+        ForegroundColor = settings.Foreground;
+    }
 }
 
-void DisplayHelpInfo() // TODO
+ConsoleColor DisplayColourSettings(string prompt)
+{
+    (string, string)[] options = [("Black", ""), ("White", ""), ("Gray", ""), ("Dark Gray", ""), ("Red", ""),
+        ("Dark Red", ""), ("Yellow", ""), ("Dark Yellow", ""), ("Green", ""), ("Dark Green", ""), ("Cyan", ""),
+        ("Dark Cyan", ""), ("Blue", ""), ("Dark Blue", ""), ("Magenta", ""), ("Dark Magenta", "") ];
+    Menu menu = new(options, prompt);
+    MenuSettings settings = new();
+
+    int selection = menu.Run();
+
+    switch (selection)
+    {
+        case 0:
+            return ConsoleColor.Black;
+        case 1:
+            return ConsoleColor.White;
+        case 2:
+            return ConsoleColor.Gray;
+        case 3:
+            return ConsoleColor.DarkGray;
+        case 4:
+            return ConsoleColor.Red;
+        case 5:
+            return ConsoleColor.DarkRed;
+        case 6:
+            return ConsoleColor.Yellow;
+        case 7:
+            return ConsoleColor.DarkYellow;
+        case 8:
+            return ConsoleColor.Green;
+        case 9:
+            return ConsoleColor.DarkGreen;
+        case 10:
+            return ConsoleColor.Cyan;
+        case 11:
+            return ConsoleColor.DarkCyan;
+        case 12:
+            return ConsoleColor.Blue;
+        case 13:
+            return ConsoleColor.DarkBlue;
+        case 14:
+            return ConsoleColor.Magenta;
+        case 15:
+            return ConsoleColor.DarkMagenta;
+        default:
+            return ConsoleColor.Black;
+    }
+}
+
+void DisplayInfo() // TODO
 {
     Clear();
-    WriteLine("Help Info:");
+    WriteLine("Info:");
     ReadKey(true);
 }
 

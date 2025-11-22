@@ -1,5 +1,4 @@
-﻿using System.Text;
-using static System.Console;
+﻿using static System.Console;
 
 public class Menu
 {
@@ -9,8 +8,7 @@ public class Menu
     private (string title, string info)[] _options;
     public int SelectedIndex { get { return _selectedIndex; } }
 
-    public static ConsoleColor background = ConsoleColor.Gray;
-    public static ConsoleColor foreground = ConsoleColor.DarkGreen;
+    private MenuSettings settings = MenuSettings.Load();
 
     public Menu((string title, string info)[] options, string prompt, int? selectedIndex = null)
     {
@@ -50,20 +48,20 @@ public class Menu
                 {
                     prefix = ">";
                     info = _options[i].info;
-                    ForegroundColor = background;
-                    BackgroundColor = foreground;
+                    ForegroundColor = settings.SelectionForeground;
+                    BackgroundColor = settings.SelectionBackground;
                 }
                 else
                 {
                     prefix = " ";
                     info = "";
-                    ForegroundColor = foreground;
-                    BackgroundColor = background;
+                    ForegroundColor = settings.Foreground;
+                    BackgroundColor = settings.Background;
                 }
 
                 Write($"{prefix} [ {currentOption} ]");
-                ForegroundColor = foreground;
-                BackgroundColor = background;
+                ForegroundColor = settings.Foreground;
+                BackgroundColor = settings.Background;
                 WriteLine((string.IsNullOrEmpty(info) ? "" : $" - {info}"));
             }
         }

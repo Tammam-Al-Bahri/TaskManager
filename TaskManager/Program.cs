@@ -24,6 +24,7 @@ string dateFormat = "yyyy-MM-dd";
 
 string path = "";
 TaskManager manager = new();
+bool unsavedChanges = false;
 
 HandleArgs();
 
@@ -32,6 +33,7 @@ HandleArgs();
     BackgroundColor = settings.Background;
     ForegroundColor = settings.Foreground;
 }
+
 // start the program
 while (true)
 {
@@ -77,7 +79,6 @@ void HandleArgs()
 
             manager = loaded;
             break;
-
         case "-n":
             if(File.Exists(filePath))
             {
@@ -91,11 +92,9 @@ void HandleArgs()
                 }
 
             }
-
             path = filePath;
             manager.Save(filePath);
             break;
-
         default:
             WriteLine("ERROR: Unknown command. Use '-o [file name] [file path]' or '-n [file name] [file path]'.");
             Exit();
@@ -108,7 +107,7 @@ void MainMenu()
 {
     Title = "Task Manager";
     string prompt = logo;
-    (string, string)[] options = [("Tasks", "view and manage tasks"), ("Display", "choose a theme"), ("Info", "about"), ("Exit", "have you saved changes first?")];
+    (string, string)[] options = [("Tasks", "view and manage tasks"), ("Display", "select display colours"), ("Info", ""), ("Exit", "")];
 
     Menu menu = new Menu(options, prompt);
     int selection = menu.Run();
@@ -212,17 +211,23 @@ void ManageTasks(Task? selectedTask = null)
             {
                 case -1:
                     bool created = CreateNewTask(selectedTask);
-                    if (created) index = tasks.Count; // highlight new task if it's created
+                    if (created)
+                    {
+                        index = tasks.Count; // highlight new task if it's created
+                        unsavedChanges = true;
+                    }
                     break;
                 case -2:
                     if (tasks.Count == 0) break;
                     index = menu.SelectedIndex;
                     EditTask(tasks[menu.SelectedIndex]); // index from menu
+                    unsavedChanges = true;
                     break;
                 case -3:
                     if (tasks.Count == 0) break;
                     index = menu.SelectedIndex;
                     ToggleTaskIsCompleted(tasks[menu.SelectedIndex]);
+                    unsavedChanges = true;
                     break;
                 case -4:
                     if(selectedTask == null) // no task selected at rool level, return to main menu
@@ -244,10 +249,12 @@ void ManageTasks(Task? selectedTask = null)
                     if (tasks.Count == 0) break;
                     index = menu.SelectedIndex;
                     DeleteTask(tasks[menu.SelectedIndex]);
+                    unsavedChanges = true;
                     break;
                 case -6:
                     manager.Save(path);
                     index = menu.SelectedIndex;
+                    unsavedChanges = false;
                     break;
                 case -7: // return (to MainMenu())
                     return;
@@ -423,6 +430,22 @@ void DisplayInfo() // TODO
 
 void Exit()
 {
+    if (unsavedChanges)
+    {
+        (string, string)[] options = [("save and exit", ""), ("exit without saving", ""), ("cancel", "") ];
+        string prompt = "There are unsaved changes.";
+        Menu menu = new(options, prompt);
+
+        int selection = menu.Run();
+        switch(selection)
+        {
+            case 0:
+                manager.Save(path);
+                break;
+            case 2:
+                return;
+        }
+    }
     Environment.Exit(0);
 }
 
@@ -509,7 +532,7 @@ ___________                               ___________________
 |   [ 3 ]         - mark as completed |   | {(filter == TaskFilter.Complete || filter == TaskFilter.Incomplete ? ">" : " ")} [ F3 ] - filter {(filter != TaskFilter.Complete && filter != TaskFilter.Incomplete ? "complete  " : (filter == TaskFilter.Complete ? "complete  " : "incomplete"))}    |
 |   [ BACKSPACE ] - go back           |   | {(filter == TaskFilter.Overdue ? ">" : " ")} [ F4 ] - filter overdue       |
 |   [ DELETE ]    - delete task       |   | {(filter == TaskFilter.Recurring ? ">" : " ")} [ F5 ] - filter recurring     |
-|   [ 0 ]         - save changes      |   |---------------------------------|
+|   [ 0 ]         - save changes{(unsavedChanges ? "*" : " ")}     |   |---------------------------------|
 |   [ ESC ]       - main menu         |   |   [ F10 ] - clear               |
 ---------------------------------------   -----------------------------------
 {(task != null ?

@@ -71,7 +71,7 @@
         }
         else
         {
-            var parent = GetTaskFromId(task.ParentId.Value);
+            Task? parent = GetTaskFromId(task.ParentId.Value);
             parent?.SubTaskIds.Remove(task.Id);
         }
 
@@ -133,14 +133,12 @@
 
 
 
-    public void Save(string fileName, string? filePath = null)
+    public void Save(string path)
     {
-        if (Path.GetExtension(fileName).ToLower() != ".dat")
-            fileName += ".dat";
+        if (Path.GetExtension(path).ToLower() != ".dat")
+            path += ".dat";
 
-        string fullPath = filePath == null ? fileName : Path.Combine(filePath, fileName);
-
-        using FileStream fs = File.Open(fullPath, FileMode.Create);
+        using FileStream fs = File.Open(path, FileMode.Create);
         using BinaryWriter bw = new BinaryWriter(fs);
 
         // write nextId
@@ -189,22 +187,20 @@
         }
     }
 
-    public static TaskManager? LoadBinary(string fileName, string? filePath = null)
+    public static TaskManager? LoadBinary(string path)
     {
 
-        if (Path.GetExtension(fileName).ToLower() != ".dat")
-            fileName += ".dat";
+        if (Path.GetExtension(path).ToLower() != ".dat")
+            path += ".dat";
 
-        string fullPath = filePath == null ? fileName : Path.Combine(filePath, fileName);
-
-        if (!File.Exists(fullPath)) return null;
+        if (!File.Exists(path)) return null;
 
         TaskManager manager = new();
 
         manager._rootTasks.Clear();
         manager._allTasks.Clear();
 
-        using FileStream fs = File.Open(fullPath, FileMode.Open);
+        using FileStream fs = File.Open(path, FileMode.Open);
         using BinaryReader br = new BinaryReader(fs);
 
         // next id
@@ -214,7 +210,7 @@
         int count = br.ReadInt32();
 
         // temporary list for parent tasks
-        List<Task> loaded = new();
+        List<Task> loaded = new(count); // capacity
 
         for (int i = 0; i < count; i++)
         {

@@ -145,16 +145,16 @@ public class TaskApp
             switch (filter)
             {
                 case TaskFilter.Incomplete:
-                    baseTasks = baseTasks.Where(t => !t.IsCompleted);
+                    baseTasks = baseTasks.Where(t => !t.IsCompleted).AsParallel();
                     break;
                 case TaskFilter.Complete:
-                    baseTasks = baseTasks.Where(t => t.IsCompleted);
+                    baseTasks = baseTasks.Where(t => t.IsCompleted).AsParallel();
                     break;
                 case TaskFilter.Overdue:
-                    baseTasks = baseTasks.Where(t => t.DueDate != null && t.DueDate < DateTime.Now);
+                    baseTasks = baseTasks.Where(t => t.DueDate != null && t.DueDate < DateTime.Now).AsParallel();
                     break;
                 case TaskFilter.Recurring:
-                    baseTasks = baseTasks.Where(t => t is RecurringTask);
+                    baseTasks = baseTasks.Where(t => t is RecurringTask).AsParallel();
                     break;
             }
 
@@ -162,10 +162,10 @@ public class TaskApp
             switch (sort)
             {
                 case TaskSort.ByTitle:
-                    baseTasks = baseTasks.OrderBy(t => t.Title);
+                    baseTasks = baseTasks.OrderBy(t => t.Title).AsParallel();
                     break;
                 case TaskSort.ByDueDate:
-                    baseTasks = baseTasks.OrderBy(t => t.DueDate ?? DateTime.MaxValue); // no due date at end
+                    baseTasks = baseTasks.OrderBy(t => t.DueDate ?? DateTime.MaxValue).AsParallel(); // no due date at end
                     break;
             }
 

@@ -172,7 +172,10 @@
             // due date
             bw.Write(t.DueDate.HasValue);
             if (t.DueDate.HasValue)
-                bw.Write(t.DueDate.Value.Ticks); // integer 
+                bw.Write(t.DueDate.Value.Ticks); // integer
+
+            // created at
+            bw.Write(t.CreatedAt.Ticks); // integer 
 
             // subtasks
             bw.Write(t.SubTaskIds.Count);
@@ -230,6 +233,8 @@
             if (br.ReadBoolean())
                 due = new DateTime(br.ReadInt64());
 
+            DateTime created = new DateTime(br.ReadInt64());
+
             int subCount = br.ReadInt32();
             List<int> subIds = new(subCount);
             for (int j = 0; j < subCount; j++)
@@ -240,11 +245,11 @@
             if (isRecurring)
             {
                 int interval = br.ReadInt32();
-                t = new RecurringTask(id, title, description, interval, isCompleted, parentId, due);
+                t = new RecurringTask(id, title, description, interval, isCompleted, parentId, due, created);
             }
             else
             {
-                t = new Task(id, title, description, isCompleted, parentId, due);
+                t = new Task(id, title, description, isCompleted, parentId, due, created);
             }
 
             t.SubTaskIds = subIds;

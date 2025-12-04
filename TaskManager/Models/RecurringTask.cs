@@ -17,8 +17,8 @@
         }
     }
 
-    public RecurringTask(int id, string title, string description, int intervalDays, bool isCompleted, int? parentId = null, DateTime? dueDate = null)
-        : base(id, title, description, isCompleted, parentId, dueDate)
+    public RecurringTask(int id, string title, string description, int intervalDays, bool isCompleted, int? parentId = null, DateTime? dueDate = null, DateTime? createdAt = null)
+        : base(id, title, description, isCompleted, parentId, dueDate, createdAt)
     {
         _intervalDays = intervalDays;
     }

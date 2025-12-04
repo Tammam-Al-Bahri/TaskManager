@@ -12,13 +12,13 @@
     public int? ParentId;
     public List<int> SubTaskIds = new();
 
-    public Task(int id, string title, string description, bool isCompleted, int? parentId = null, DateTime? dueDate = null)
+    public Task(int id, string title, string description, bool isCompleted, int? parentId = null, DateTime? dueDate = null, DateTime? createdAt = null)
     {
         Id = id;
         Title = title;
         Description = description;
 
-        CreatedAt = DateTime.Now;
+        CreatedAt = createdAt ?? DateTime.Now;
         DueDate = dueDate;
 
         IsCompleted = isCompleted;

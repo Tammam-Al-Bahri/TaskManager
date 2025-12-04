@@ -1,5 +1,4 @@
-﻿using System.Text;
-using static System.Console;
+﻿using static System.Console;
 
 public class TaskApp
 {
@@ -138,8 +137,7 @@ public class TaskApp
         TaskFilter filter = TaskFilter.None;
         while (true)
         {
-            Title = $"{selectedTask?.Title ?? "Tasks"}"; // ?? for default window title if no selected task
-
+            Title = "Task Manager";
             // as parallel to use multiple threads
             IEnumerable<Task> baseTasks = (selectedTask == null ? _manager.RootTasks : _manager.GetSubTasks(selectedTask)).AsParallel();
 
@@ -331,6 +329,7 @@ public class TaskApp
 
     private void DisplaySettings()
     {
+        Title = "Display Settings";
         (string, string)[] options = [("Background", "change background colour"),
             ("Foreground", "change foreground colour"), ("Selection Background", "change selection background colour"),
             ("Selection Foreground", "change selection foreground colour"), ("Main Menu", "return to main menu")];
@@ -345,19 +344,19 @@ public class TaskApp
             switch (selection)
             {
                 case 0:
-                    settings.Background = DisplayColourSettings("Select Background Colour");
+                    settings.Background = SelectColour("Select Background Colour");
                     settings.Save();
                     break;
                 case 1:
-                    settings.Foreground = DisplayColourSettings("Select Foreground Colour");
+                    settings.Foreground = SelectColour("Select Foreground Colour");
                     settings.Save();
                     break;
                 case 2:
-                    settings.SelectionBackground = DisplayColourSettings("Select Selection Background Colour");
+                    settings.SelectionBackground = SelectColour("Select Selection Background Colour");
                     settings.Save();
                     break;
                 case 3:
-                    settings.SelectionForeground = DisplayColourSettings("Select Selection Foreground Colour");
+                    settings.SelectionForeground = SelectColour("Select Selection Foreground Colour");
                     settings.Save();
                     break;
                 case 4:
@@ -370,7 +369,7 @@ public class TaskApp
         }
     }
 
-    private ConsoleColor DisplayColourSettings(string prompt)
+    private ConsoleColor SelectColour(string prompt)
     {
         (string, string)[] options = [("Black", ""), ("White", ""), ("Gray", ""), ("Dark Gray", ""), ("Red", ""),
             ("Dark Red", ""), ("Yellow", ""), ("Dark Yellow", ""), ("Green", ""), ("Dark Green", ""), ("Cyan", ""),
@@ -570,7 +569,7 @@ $"\n{_separator}" +
 
     private string TaskInfo(Task task)
     {
-        string i = $"| Completed: {(task.IsCompleted ? "Yes" : "No")} | Due: {(task.DueDate.HasValue ? $"{(task.DueDate.Value - DateTime.Now).Days} days" : "-")}";
+        string i = $"| Sub Tasks: {task.SubTaskIds.Count} | Completed: {(task.IsCompleted ? "Yes" : "No")} | Due: {(task.DueDate.HasValue ? $"{(task.DueDate.Value - DateTime.Now).Days} days" : "-")}";
         return i;
     }
 
@@ -580,7 +579,7 @@ $"\n{_separator}" +
         if (edit == null) edit = "";
 
         WriteLine($"(optional) Due Date ({_dateFormat}): ");
-        string input = ConsoleInput.ReadLineWithEdit(edit);
+        string input = ConsoleInput.ReadLineWithEdit(edit).Trim().Replace(" ", "-");
 
         WriteLine();
 

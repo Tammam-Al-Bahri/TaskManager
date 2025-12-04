@@ -6,6 +6,7 @@ public static class ConsoleInput
     // to keep original text when editing
     public static string ReadLineWithEdit(string initial)
     {
+        // much faster (~1 ms) with sb
         StringBuilder buffer = new StringBuilder(initial);
         int cursorPos = initial.Length;
 

@@ -108,7 +108,7 @@ public class TaskApp
 
     private void MainMenu()
     {
-        Title = "Task Manager";
+        Title = $"Task Manager: {_path}";
         string prompt = logo;
         (string, string)[] options = [("Tasks", "view and manage tasks"), ("Display", "select display colours"), ("Exit", "")];
 
@@ -617,8 +617,9 @@ $"\n{_separator}" +
 
         if (string.IsNullOrEmpty(input))
         {
-            WriteLine("No interval set.");
+            Write("No interval set.");
             ReadKey(true);
+            WriteLine();
         }
         else
         {

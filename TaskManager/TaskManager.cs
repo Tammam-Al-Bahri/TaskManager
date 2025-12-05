@@ -256,9 +256,9 @@
             loaded.Add(t);
         }
 
-    // rebuild dictionary and root tasks in parallel
-    // locks to make this thread safe
-    object dictLock = new();
+        // rebuild dictionary and root tasks in parallel
+        // locks to make this thread safe
+        object dictLock = new();
         object listLock = new();
 
         Parallel.ForEach(loaded, t =>

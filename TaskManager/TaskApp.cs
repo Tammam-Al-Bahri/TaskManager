@@ -585,8 +585,9 @@ $"\n{_separator}" +
 
         if (string.IsNullOrEmpty(input))
         {
-            WriteLine("No due date set.");
+            Write("No due date set.");
             ReadKey(true);
+            WriteLine();
         }
         else
         {
@@ -596,8 +597,9 @@ $"\n{_separator}" +
             }
             else
             {
-                WriteLine("Invalid date format. No due date set.");
+                Write("Invalid date format. No due date set.");
                 ReadKey(true);
+                WriteLine();
             }
         }
         return dueDate;
@@ -624,16 +626,18 @@ $"\n{_separator}" +
             {
                 if (parsedInterval < 1)
                 {
-                    WriteLine("Interval must be greater than zero days. No interval set.");
+                    Write("Interval must be greater than zero days. No interval set.");
                     ReadKey(true);
+                    WriteLine();
                     return null;
                 }
                 interval = parsedInterval;
             }
             else
             {
-                WriteLine("Invalid format. No interval set.");
+                Write("Invalid format. No interval set.");
                 ReadKey(true);
+                WriteLine();
             }
         }
         return interval;

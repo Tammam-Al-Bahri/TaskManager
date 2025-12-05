@@ -13,7 +13,6 @@ public static class ConsoleInput
         Write(initial);
 
         ConsoleKey keyPressed = new();
-        ConsoleKeyInfo key;
         while (keyPressed != ConsoleKey.Enter)
         {
             ConsoleKeyInfo keyInfo = ReadKey(true);

@@ -22,13 +22,4 @@
     {
         _intervalDays = intervalDays;
     }
-
-    public void ResetForNextOccurrence() // mark incomplete and move due date
-    {
-        IsCompleted = false;
-        if (DueDate.HasValue)
-            DueDate = DueDate.Value.AddDays(IntervalDays);
-        else
-            DueDate = DateTime.Now.AddDays(IntervalDays);
-    }
 }

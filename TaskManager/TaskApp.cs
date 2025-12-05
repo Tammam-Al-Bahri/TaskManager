@@ -569,7 +569,7 @@ $"\n{_separator}" +
 
     private string TaskInfo(Task task)
     {
-        string i = $"| Sub Tasks: {task.SubTaskIds.Count} | Completed: {(task.IsCompleted ? "Yes" : "No")} | Due: {(task.DueDate.HasValue ? $"{(task.DueDate.Value - DateTime.Now).Days} days" : "-")}";
+        string i = $"| Sub Tasks: {task.SubTaskIds.Count} | Completed: {(task.IsCompleted ? "Yes" : "No")} {(task.IsCompleted ? "" : $"| Due: {(task.DueDate.HasValue ? $"{(task.DueDate.Value - DateTime.Now).Days} days" : "-")}")}";
         return i;
     }
 

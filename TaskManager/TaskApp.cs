@@ -47,7 +47,7 @@ public class TaskApp
     {
         if (args.Length == 0)
         {
-            WriteLine("ERROR: Use '-o [file name] [file path]' to open or '-n [file name] [file path]' to create new.");
+            WriteLine("ERROR: Use '-o [file name]' to open or '-n [file name]' to create new.");
             Exit();
         }
 

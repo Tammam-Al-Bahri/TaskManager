@@ -99,7 +99,7 @@ public class TaskApp
                 _manager.Save(filePath);
                 break;
             default:
-                WriteLine("ERROR: Unknown command. Use '-o [file name] [file path]' or '-n [file name] [file path]'.");
+                WriteLine("ERROR: Unknown command. Use '-o [file name]' or '-n [file name]'.");
                 Exit();
                 break;
         }

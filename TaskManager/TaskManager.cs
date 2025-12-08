@@ -1,7 +1,7 @@
 ﻿public class TaskManager
 {
     private readonly List<Task> _rootTasks = new();
-    private readonly Dictionary<int, Task> _allTasks = new();
+    private readonly Dictionary<int, Task> _allTasks = new(); // cache all tasks
     private int _nextId = 1; // for auto increment
 
     // for parallel thread safety

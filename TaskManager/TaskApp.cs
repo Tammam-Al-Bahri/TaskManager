@@ -501,6 +501,7 @@ public class TaskApp
     private void DeleteTask(Task task)
     {
         _manager.DeleteTask(task);
+        _manager.UpdateIsCompleteUpwards(task);
     }
 
     private void ToggleTaskIsCompleted(Task task)
